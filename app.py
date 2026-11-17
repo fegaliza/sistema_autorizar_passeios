@@ -852,6 +852,7 @@ def parent_page(token):
             st.session_state[nonce_key] = st.session_state.get(nonce_key, 0) + 1
             # Não restaurar o rascunho excluído no próximo rerun.
             st.session_state.pop(f"loaded_draft_{event_id}", None)
+            st.session_state.pop(f"fields_saved_{event_id}", None)
         if not DRAFT_CIPHER:
             # Falha de configuração interna: não exibir detalhes técnicos ao responsável.
             import logging
@@ -904,56 +905,67 @@ def parent_page(token):
                 org_parts.append(f"**Emergências:** {event_data['emergency_phone']}")
             st.caption("  ·  ".join(org_parts))
 
-        # Atualiza apenas os campos durante o salvamento automatico.
-        # O cabecalho e o componente de assinatura nao sao redesenhados.
-        @st.fragment
-        def campos_do_responsavel():
+        # Os widgets dentro de st.form nao provocam reruns ao mudar de campo.
+        # O rascunho e gravado no Neon ao clicar em "Salvar dados e continuar".
+        # Essa troca e intencional: elimina as atualizacoes durante a digitacao,
+        # mas nao salva automaticamente cada campo individualmente.
+        with st.form(key=f"parent_fields_{event_id}", clear_on_submit=False):
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
-                child_name = c1.text_input("Nome completo do participante *", key=draft_key("child_name"), on_change=autosave)
-                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"), on_change=autosave)
+                child_name = c1.text_input("Nome completo do participante *", key=draft_key("child_name"))
+                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"))
 
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
-                parent_name = st.text_input("Nome completo do responsável *", key=draft_key("parent_name"), on_change=autosave)
+                parent_name = st.text_input("Nome completo do responsável *", key=draft_key("parent_name"))
                 r1, r2 = st.columns(2)
-                parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", key=draft_key("parent_document"), on_change=autosave)
-                relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"), on_change=autosave)
+                parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", key=draft_key("parent_document"))
+                relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"))
                 r3, r4 = st.columns(2)
-                parent_phone = r3.text_input("Telefone/WhatsApp *", key=draft_key("parent_phone"), on_change=autosave)
-                parent_email = r4.text_input("E-mail (opcional)", key=draft_key("parent_email"), on_change=autosave)
+                parent_phone = r3.text_input("Telefone/WhatsApp *", key=draft_key("parent_phone"))
+                parent_email = r4.text_input("E-mail (opcional)", key=draft_key("parent_email"))
 
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">3</span><p class="step-title">Contato para emergência</p></div>', unsafe_allow_html=True)
                 e1, e2 = st.columns(2)
-                emergency_contact = e1.text_input("Nome do contato de emergência *", key=draft_key("emergency_contact"), on_change=autosave)
-                emergency_phone = e2.text_input("Telefone do contato de emergência *", key=draft_key("emergency_phone"), on_change=autosave)
+                emergency_contact = e1.text_input("Nome do contato de emergência *", key=draft_key("emergency_contact"))
+                emergency_phone = e2.text_input("Telefone do contato de emergência *", key=draft_key("emergency_phone"))
 
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">4</span><p class="step-title">Informações importantes</p></div>', unsafe_allow_html=True)
                 health_notes = st.text_area(
                     "Existe alguma informação importante para o cuidado do participante durante a atividade? (opcional)",
-                    help="Evite incluir detalhes desnecessários. Informe somente o estritamente necessário para o cuidado durante a atividade.", key=draft_key("health_notes"), on_change=autosave
+                    help="Evite incluir detalhes desnecessários. Informe somente o estritamente necessário para o cuidado durante a atividade.", key=draft_key("health_notes")
                 )
 
+            saved_fields = st.form_submit_button(
+                "Salvar dados e continuar para assinatura",
+                type="primary", use_container_width=True
+            )
 
-        campos_do_responsavel()
+        if saved_fields:
+            save_parent_draft(event_id, draft_hash)
+            st.session_state[f"fields_saved_{event_id}"] = True
+            st.success("Dados salvos. Confira as confirmações e assine abaixo.")
+        else:
+            st.caption("Após preencher os dados, toque em ‘Salvar dados e continuar’ antes de assinar.")
 
         with st.container(border=True):
             st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Confirmação e assinatura</p></div>', unsafe_allow_html=True)
             st.markdown(
                 "Declaro ser responsável legal pelo participante menor de 18 anos "
-    "identificado neste formulário e autorizo sua participação na atividade "
-    "descrita acima. Confirmo que as informações fornecidas são verdadeiras."
+                "identificado neste formulário e autorizo sua participação na atividade "
+                "descrita acima. Confirmo que as informações fornecidas são verdadeiras."
             )
             @st.fragment
             def confirmacoes_do_responsavel():
-                declaration = st.checkbox("Li as informações e autorizo a participação do participante identificado acima. *", key=draft_key("declaration"), on_change=autosave)
-                privacy = st.checkbox(
+                st.checkbox("Li as informações e autorizo a participação do participante identificado acima. *", key=draft_key("declaration"), on_change=autosave)
+                st.checkbox(
                     f"Li as informações de privacidade e estou ciente de que meus dados e os do participante "
                     f"serão tratados pela organização ({CONTROLLER_NAME}) para registrar a autorização, "
-                    f"organizar a atividade e atender necessidades de contato e segurança. *", key=draft_key("privacy"), on_change=autosave
+                    f"organizar a atividade e atender necessidades de contato e segurança. *",
+                    key=draft_key("privacy"), on_change=autosave
                 )
 
             confirmacoes_do_responsavel()
@@ -1007,6 +1019,8 @@ def parent_page(token):
             declaration = st.session_state.get(draft_key("declaration"), False)
             privacy = st.session_state.get(draft_key("privacy"), False)
             errors = []
+            if not st.session_state.get(f"fields_saved_{event_id}", False):
+                errors.append("Primeiro toque em ‘Salvar dados e continuar para assinatura’.")
             if not child_name.strip(): errors.append("Informe o nome completo do participante.")
             if not parent_name.strip(): errors.append("Informe o nome completo do responsável.")
             if not parent_document.strip(): errors.append("Informe um documento de identificação.")
