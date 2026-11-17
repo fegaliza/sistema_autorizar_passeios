@@ -208,10 +208,7 @@ def inject_custom_css():
     }
 }
       .event-info-grid {grid-template-columns:1fr!important;gap:.65rem!important;}
-      .stApp [data-testid="stHorizontalBlock"] {flex-wrap:wrap!important;}
-      .stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
-        min-width:min(100%,250px)!important;flex:1 1 100%!important;
-      }
+      /* Preserva colunas pequenas; Streamlit gerencia o empilhamento no celular. */
       .stTabs [data-baseweb="tab-list"] {overflow-x:auto;flex-wrap:nowrap;}
       .stTabs [data-baseweb="tab"] {white-space:nowrap;}
       .login-intro {margin:.6rem auto 1rem!important;}
@@ -221,6 +218,41 @@ def inject_custom_css():
       .admin-kpi {padding:9px 7px;border-radius:9px;text-align:center;}
       .admin-kpi-label {font-size:.69rem;line-height:1.2;}
       .admin-kpi-value {font-size:1.4rem;margin-top:5px;}
+    }
+
+    /* Redesign minimalista: elimina contornos dos containers nativos de todas as versoes. */
+    .stApp [data-testid="stVerticalBlockBorderWrapper"],
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div,
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+    .stApp [data-testid="stVerticalBlock"]:not([data-testid="stSidebar"] *) {
+      box-shadow:none!important;
+    }
+    .stApp [data-testid="stVerticalBlockBorderWrapper"],
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div {
+      border:0!important;outline:0!important;background:transparent!important;
+      border-radius:0!important;padding:0!important;
+    }
+    .stApp [data-testid="stMainBlockContainer"] {max-width:960px!important;}
+    .stApp [data-testid="stMainBlockContainer"] > div {gap:.85rem!important;}
+    .stApp [data-testid="stMetric"] {border:0!important;background:transparent!important;padding:0!important;}
+    .stApp [data-testid="stCodeBlock"] {border:0!important;background:#F8FAFC!important;border-radius:8px!important;}
+    .stApp [data-testid="stForm"] {border:0!important;background:transparent!important;padding:0!important;}
+    .stApp [data-testid="stExpander"] {border:1px solid #E8EDF5!important;border-radius:9px!important;overflow:hidden;}
+    .stApp [data-testid="stTabs"] [data-baseweb="tab-list"] {border-bottom:1px solid #E8EDF5;}
+    .stApp .stButton button,.stApp .stDownloadButton button {font-weight:600!important;box-shadow:none!important;}
+    .stApp .stTextInput input {border-radius:8px!important;min-height:40px!important;}
+    .event-count {display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;padding:.15rem 0;}
+    .event-count span {font-size:.76rem;color:#64748B!important;}
+    .event-count strong {font-size:1.65rem;color:#172B4D!important;line-height:1.1;}
+    .stApp [data-testid="stMainBlockContainer"] h3 {font-size:1.08rem!important;line-height:1.35!important;}
+    @media(max-width:700px) {
+      .stApp [data-testid="stMainBlockContainer"] {padding:1rem .9rem 2rem!important;}
+      .stApp [data-testid="stMainBlockContainer"] > div {gap:.65rem!important;}
+      .stApp [data-testid="stHorizontalBlock"] {gap:.55rem!important;}
+      .stApp [data-testid="stColumn"] {min-width:0!important;}
+      .event-count strong {font-size:1.35rem;}
+      .stApp .stButton button {min-height:40px!important;padding:.4rem .55rem!important;font-size:.86rem!important;}
+      .admin-kpi {border:0!important;background:#F8F7FC!important;}
     }
     </style>
     """, unsafe_allow_html=True)
@@ -740,8 +772,9 @@ def admin_page():
         if not events:
             st.info("Nenhum evento cadastrado. Comece na aba “＋ Criar evento”.")
         for ev in events:
+            st.divider()
             with st.container(border=False):
-                c1, c2 = st.columns([3.2, 1])
+                c1, c2 = st.columns([3, 1])
                 badge_html = (
                     '<span class="status-badge status-active">● Link Ativo</span>'
                     if ev.active else
@@ -752,12 +785,12 @@ def admin_page():
                 if ev.departure_time or ev.return_time:
                     c1.caption(f"🕒 Saída: {ev.departure_time or '—'} | Retorno: {ev.return_time or '—'}")
 
-                c2.metric("Assinaturas", event_auth_counts.get(ev.id, 0))
+                c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
 
                 url = make_public_url(ev.public_token)
-                u1, u2 = st.columns([4, 1])
+                u1, u2 = st.columns([3, 1])
                 with u1:
-                    st.code(url, language=None)
+                    st.text_input("Link para compartilhar", value=url, key=f"url_{ev.id}", label_visibility="collapsed")
                 with u2:
                     st.button("Copiar link", key=f"copy_{ev.id}", use_container_width=True, on_click=lambda u=url: st.session_state.update({"copy_text": u}))
 
