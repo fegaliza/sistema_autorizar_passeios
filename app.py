@@ -140,7 +140,12 @@ def inject_custom_css():
     .login-intro p {color:var(--muted)!important;font-size:.92rem;}
     .login-footer {text-align:center;color:#64748B!important;font-size:.79rem;margin-top:1rem;}
     .section-intro h1 {font-size:1.65rem;color:var(--navy)!important;margin-bottom:.2rem;}
-    .section-intro p {color:var(--muted)!important;margin-bottom:1.3rem;}
+    .section-intro p {color:var(--muted)!important;margin-bottom:.65rem;font-size:.91rem;}
+    .section-intro h1 {font-size:1.4rem!important;margin-bottom:.12rem!important;}
+    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:.4rem 0 .85rem;}
+    .admin-kpi {background:#fff;border:1px solid #E9DFFF;border-radius:11px;padding:12px 14px;min-width:0;}
+    .admin-kpi-label {font-size:.83rem;color:#52647B!important;line-height:1.3;}
+    .admin-kpi-value {font-size:1.75rem;font-weight:700;line-height:1.2;margin-top:4px;color:#172B4D!important;}
     .parent-intro {text-align:center;padding:1.1rem 0 1.5rem;}
     .parent-intro h1 {font-size:1.7rem;color:var(--navy)!important;margin:.4rem 0;}
     .parent-intro p {color:var(--muted)!important;max-width:650px;margin:0 auto;}
@@ -179,6 +184,12 @@ def inject_custom_css():
       .stTabs [data-baseweb="tab-list"] {overflow-x:auto;flex-wrap:nowrap;}
       .stTabs [data-baseweb="tab"] {white-space:nowrap;}
       .login-intro {margin:.6rem auto 1rem!important;}
+      .section-intro h1 {font-size:1.2rem!important;}
+      .section-intro p {font-size:.82rem!important;margin-bottom:.45rem!important;}
+      .admin-kpi-grid {gap:7px;margin:.25rem 0 .6rem;}
+      .admin-kpi {padding:9px 7px;border-radius:9px;text-align:center;}
+      .admin-kpi-label {font-size:.69rem;line-height:1.2;}
+      .admin-kpi-value {font-size:1.4rem;margin-top:5px;}
     }
     </style>
     """, unsafe_allow_html=True)
@@ -549,7 +560,7 @@ def admin_page():
     st.markdown("""
     <div class="section-intro">
         <h1>Visão geral</h1>
-        <p>Gerencie os passeios e acompanhe as autorizações recebidas.</p>
+        <p>Acompanhe eventos e autorizações em um só lugar.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -561,11 +572,15 @@ def admin_page():
             .group_by(Authorization.event_id)
         ).all())
 
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Eventos", len(events))
-    k2.metric("Links ativos", sum(1 for e in events if e.active))
-    k3.metric("Autorizações", total_auths)
-    st.write("")
+    # Indicadores compactos: três cartões na mesma linha também em telas pequenas.
+    active_links = sum(1 for e in events if e.active)
+    st.markdown(f"""
+    <div class="admin-kpi-grid" aria-label="Resumo do painel">
+      <div class="admin-kpi"><div class="admin-kpi-label">Eventos</div><div class="admin-kpi-value">{len(events)}</div></div>
+      <div class="admin-kpi"><div class="admin-kpi-label">Links ativos</div><div class="admin-kpi-value">{active_links}</div></div>
+      <div class="admin-kpi"><div class="admin-kpi-label">Autorizações</div><div class="admin-kpi-value">{total_auths}</div></div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Lembrete administrativo: não executa exclusão nem altera os registros.
     # 30 dias é apenas uma referência operacional configurável, não um prazo legal da LGPD.
@@ -822,9 +837,7 @@ def parent_page(token):
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
             </div>
             <h1>Autorização de Participação</h1>
-            <p>Este formulário é destinado aos responsáveis legais por participantes menores de 18 anos. 
-
-Preencha as informações abaixo para autorizar a participação na atividade.</p>
+            <p>Este formulário é destinado aos responsáveis legais por participantes menores de 18 anos. Preencha as informações abaixo para autorizar a participação na atividade.</p>
         </div>
         """, unsafe_allow_html=True)
 
