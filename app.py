@@ -1104,8 +1104,7 @@ def privacy_page():
                 "O responsável pode pedir informações sobre o uso dos dados e solicitar "
                 "acesso, correção ou exclusão, quando aplicável, pelo contato indicado abaixo."
             )
-            st.write(f"**Organização responsável:** {CONTROLLER_NAME}")
-            st.write(f"**Contato:** {CONTROLLER_EMAIL}")
+    
         if PRIVACY_URL:
             st.markdown(f"[Consultar aviso de privacidade da organização]({PRIVACY_URL})")
         st.caption(
