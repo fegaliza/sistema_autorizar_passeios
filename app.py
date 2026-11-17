@@ -44,97 +44,80 @@ st.set_page_config(
 
 
 def inject_custom_css():
-    """Camada exclusivamente visual: tipografia, hierarquia e responsividade."""
+    """Interface mobile-first: superficies simples, sem wrappers aninhados."""
     st.markdown("""
     <style>
-    :root {--ink:#1D2940;--muted:#69778D;--accent:#6347B5;--accent-soft:#F2EEFC;--line:#E9EDF3;--canvas:#FAFBFE}
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {background:var(--canvas)!important;color:var(--ink)!important}
-    [data-testid="stMainBlockContainer"] {max-width:1050px!important;padding:1.65rem 1.5rem 4rem!important}
-    .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label {color:var(--ink)}
-    .stApp h1 {letter-spacing:-.035em;font-weight:750!important}
-    .stApp h2,.stApp h3 {letter-spacing:-.025em}
-    [data-testid="stCaptionContainer"] p {color:var(--muted)!important}
-    /* Neutralizar todas as molduras automáticas, inclusive wrappers internos
-       que mudaram entre versões do Streamlit. Campos e botões são preservados. */
+    :root{--ink:#20253B;--muted:#667085;--violet:#6343B6;--line:#E7E9F0;--soft:#F6F4FC}
+    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#fff!important;color:var(--ink)!important}
+    [data-testid="stMainBlockContainer"]{max-width:850px!important;padding:1.25rem 1.5rem 4rem!important}
+    .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label{color:var(--ink)}
+    .stApp h1{letter-spacing:-.035em!important}
+    .stApp [data-testid="stCaptionContainer"] p{color:var(--muted)!important}
+    /* Remove molduras de containers, forms e wrappers; preserva inputs. */
     .stApp [data-testid="stVerticalBlockBorderWrapper"],
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div,
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
-    .stApp [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-    .stApp [data-testid="stForm"],
-    .stApp [data-testid="stForm"] > div,
-    .stApp [data-testid="stMetric"] {
-       border:0!important;outline:0!important;box-shadow:none!important;
-       background:transparent!important;border-radius:0!important;
-    }
-    .stApp [data-testid="stVerticalBlockBorderWrapper"] {padding:0!important}
-    .stApp [data-testid="stForm"] {padding:0!important}
-    .stApp [data-testid="stMetric"] {padding:0!important}
-    .stApp [data-testid="stCodeBlock"] {border:0!important;background:#F4F6FA!important}
-    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],.stApp [data-baseweb="select"] {
-       background:#fff!important;border-color:#DCE3EE!important;border-radius:9px!important
-    }
-    .stApp input,.stApp textarea {color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
-    .stApp .stButton button,.stApp .stDownloadButton button,.stApp .stFormSubmitButton button {
-       border-radius:9px!important;min-height:40px!important;box-shadow:none!important;
-       font-weight:600!important;border-color:#DCE3EE!important
-    }
-    .stApp .stButton button[kind="primary"],.stApp .stFormSubmitButton button[kind="primary"] {
-       background:var(--accent)!important;color:white!important;border-color:var(--accent)!important
-    }
-    .stApp .stButton button[kind="primary"] *,.stApp .stFormSubmitButton button[kind="primary"] * {color:white!important}
-    .stApp [data-testid="stExpander"] {border:1px solid var(--line)!important;border-radius:10px!important;background:white!important}
-    .stApp [data-testid="stExpander"] details {border:0!important}
-    .stApp [data-testid="stTabs"] [role="tablist"] {gap:8px;border-bottom:1px solid var(--line)}
-    .stApp [data-testid="stTabs"] button[role="tab"] {font-size:.9rem!important;font-weight:600!important;padding:.7rem .85rem!important}
-    .stApp [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {color:var(--accent)!important}
-    .stApp [data-testid="stDataFrame"] {border-radius:10px;overflow:hidden}
-    .stApp hr {border-color:var(--line)!important;margin:1rem 0!important}
-    .section-intro {margin:.3rem 0 1.2rem}
-    .section-intro h1 {font-size:1.9rem!important;margin:0 0 .2rem!important}
-    .section-intro p {color:var(--muted)!important;font-size:.94rem!important;margin:0!important}
-    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:.35rem 0 1.3rem}
-    .admin-kpi {background:white;border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
-    .admin-kpi-label {color:var(--muted);font-size:.79rem;font-weight:550}
-    .admin-kpi-value {font-size:1.8rem;font-weight:750;color:var(--ink);line-height:1.3;margin-top:4px}
-    .status-badge {display:inline-flex;align-items:center;padding:4px 9px;border-radius:99px;font-size:.73rem;font-weight:650;vertical-align:middle}
-    .status-active {background:#E9F8F1;color:#18794E}
-    .status-inactive {background:#F0F2F5;color:#64748B}
-    .event-heading {display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:.3rem 0 .45rem}
-    .event-heading h3 {font-size:1.1rem!important;margin:0!important;line-height:1.35}
-    .event-details {color:var(--muted);font-size:.87rem;line-height:1.8;margin:.1rem 0 .7rem}
-    .event-details strong {color:var(--ink);font-weight:600}
-    .event-count {text-align:right;padding-top:.2rem}
-    .event-count span {display:block;color:var(--muted);font-size:.74rem}
-    .event-count strong {font-size:1.6rem;color:var(--ink);line-height:1.35}
-    .step-header {display:flex;align-items:center;gap:10px;margin:1.5rem 0 .8rem;padding-bottom:.7rem;border-bottom:1px solid var(--line)}
-    .step-number {display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:27px;height:27px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:750;font-size:.84rem}
-    .step-title {margin:0!important;font-size:1.03rem!important;font-weight:700}
-    .event-info-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:.6rem 0 1rem;padding:18px 20px;background:white;border:1px solid var(--line);border-radius:12px}
-    .event-info-item span {display:block;font-size:.76rem;color:var(--muted);font-weight:600;margin-bottom:3px}
-    .event-info-item strong {font-size:.93rem;color:var(--ink);font-weight:600;overflow-wrap:anywhere}
-    .event-guidance,.signature-box-hint {background:#F3F1FA;border:0;border-radius:9px;padding:.85rem 1rem;margin:.7rem 0;color:var(--ink)}
-    .parent-intro {text-align:left;padding:.2rem 0 .7rem}
-    .parent-intro h1 {font-size:1.8rem!important;margin:.25rem 0!important}
-    .parent-intro p {font-size:.92rem;color:var(--muted)!important;margin:0}
-    .parent-icon,.login-symbol {display:none}
-    .login-intro {text-align:center;margin:1.3rem auto 1.8rem}
-    .login-intro h1 {font-size:1.7rem!important}
-    .login-footer {text-align:center;color:var(--muted);font-size:.8rem;margin:1rem 0}
-    .interface-version {color:#A5AFBD;font-size:.69rem;text-align:right;margin-bottom:.2rem}
-    @media(max-width:700px) {
-      [data-testid="stMainBlockContainer"] {padding:1rem .9rem 3rem!important}
-      .section-intro h1,.parent-intro h1 {font-size:1.45rem!important}
-      .admin-kpi-grid {gap:7px}
-      .admin-kpi {padding:11px 9px;border-radius:9px}
-      .admin-kpi-label {font-size:.68rem}
-      .admin-kpi-value {font-size:1.35rem}
-      .event-info-grid {grid-template-columns:1fr;gap:11px;padding:14px}
-      .event-heading h3 {font-size:1rem!important}
-      .event-count strong {font-size:1.35rem}
-      .stApp .stButton button {font-size:.86rem!important}
-      .stApp [data-testid="stTabs"] button[role="tab"] {font-size:.77rem!important;padding:.55rem .4rem!important}
-      .step-header {margin-top:1.15rem}
+    .stApp [data-testid="stForm"],.stApp [data-testid="stForm"] > div,
+    .stApp [data-testid="stMetric"]{
+      border:0!important;outline:0!important;box-shadow:none!important;
+      background:transparent!important;border-radius:0!important;padding:0!important}
+    .stApp [data-testid="stExpander"]{border:1px solid var(--line)!important;border-radius:10px!important;box-shadow:none!important}
+    .stApp [data-testid="stExpander"] details{border:0!important}
+    .stApp [data-testid="stTabs"] [role="tablist"]{gap:0!important;border-bottom:1px solid var(--line)!important;overflow-x:auto!important}
+    .stApp [data-testid="stTabs"] button[role="tab"]{font-weight:650!important;white-space:nowrap!important;font-size:.86rem!important;padding:.7rem .8rem!important}
+    .stApp [data-testid="stTabs"] button[role="tab"][aria-selected="true"]{color:var(--violet)!important}
+    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],.stApp [data-baseweb="select"]{border-radius:9px!important;background:white!important}
+    .stApp input,.stApp textarea{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
+    .stApp .stButton button,.stApp .stDownloadButton button,.stApp .stFormSubmitButton button{
+      min-height:44px!important;border-radius:9px!important;box-shadow:none!important;font-weight:650!important}
+    .stApp .stButton button[kind="primary"],.stApp .stFormSubmitButton button[kind="primary"]{
+      background:var(--violet)!important;border-color:var(--violet)!important;color:#fff!important}
+    .stApp .stButton button[kind="primary"] *, .stApp .stFormSubmitButton button[kind="primary"] *{color:#fff!important}
+    .stApp hr{border-color:var(--line)!important;margin:.85rem 0!important}
+    .section-intro{margin:.1rem 0 1rem}
+    .section-intro h1{font-size:1.75rem!important;margin:0 0 .1rem!important}
+    .section-intro p{font-size:.89rem!important;color:var(--muted)!important;margin:0!important}
+    .admin-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:.4rem 0 1.15rem;border-bottom:1px solid var(--line);padding-bottom:1rem}
+    .admin-kpi{border:0;border-right:1px solid var(--line);padding:.25rem .8rem;min-width:0;background:transparent}
+    .admin-kpi:first-child{padding-left:0}.admin-kpi:last-child{border-right:0}
+    .admin-kpi-label{color:var(--muted);font-size:.73rem;line-height:1.3}
+    .admin-kpi-value{font-size:1.7rem;line-height:1.25;font-weight:750;color:var(--ink);margin-top:.25rem}
+    .status-badge{display:inline-block;font-size:.73rem;font-weight:650;padding:3px 8px;border-radius:30px}
+    .status-active{background:#E8F7F0;color:#166E4B}.status-inactive{background:#F1F2F5;color:#5F6778}
+    .event-heading{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:.1rem 0 .35rem}
+    .event-heading h3{font-size:1.08rem!important;margin:0!important;line-height:1.3}
+    .event-details{font-size:.86rem;line-height:1.65;color:var(--muted);margin:.1rem 0 .65rem}
+    .event-details strong{color:var(--ink)}
+    .event-count{text-align:right}.event-count span{display:block;color:var(--muted);font-size:.73rem}
+    .event-count strong{display:block;font-size:1.45rem;line-height:1.25;color:var(--ink)}
+    .step-header{display:flex;align-items:center;gap:10px;margin:1.25rem 0 .75rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+    .step-number{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;background:var(--soft);color:var(--violet);font-size:.82rem;font-weight:750;flex-shrink:0}
+    .step-title{font-size:1rem!important;font-weight:700!important;margin:0!important}
+    .event-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px;padding:.9rem 0;margin:.3rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:transparent}
+    .event-info-item span{display:block;color:var(--muted);font-size:.73rem;font-weight:600;margin-bottom:3px}
+    .event-info-item strong{font-size:.91rem;color:var(--ink);font-weight:650;overflow-wrap:anywhere}
+    .event-guidance,.signature-box-hint{border-left:3px solid #B6A3E6;background:var(--soft);border-radius:0 7px 7px 0;padding:.7rem .85rem;margin:.6rem 0}
+    .parent-intro{text-align:left;margin:.2rem 0 .8rem}.parent-intro h1{font-size:1.65rem!important;margin:0 0 .2rem!important}.parent-intro p{font-size:.9rem!important;color:var(--muted)!important}
+    .login-intro{text-align:center;margin:1.5rem 0}.login-intro h1{font-size:1.5rem!important}.login-footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:1rem}
+    .parent-icon,.login-symbol{display:none}.interface-version{font-size:.67rem;color:#98A1B1;text-align:right;margin-bottom:.3rem}
+    .copy-hint{font-size:.78rem;color:var(--muted);margin:.2rem 0 .25rem}
+    .stApp [data-testid="stCodeBlock"]{border:1px solid var(--line)!important;border-radius:9px!important;box-shadow:none!important}
+    @media(max-width:700px){
+      [data-testid="stMainBlockContainer"]{padding:.65rem .9rem 3rem!important}
+      .section-intro h1,.parent-intro h1{font-size:1.4rem!important}
+      .admin-kpi-grid{margin:.25rem 0 .85rem;padding-bottom:.8rem}
+      .admin-kpi{padding:.1rem .5rem}.admin-kpi-label{font-size:.66rem}.admin-kpi-value{font-size:1.35rem}
+      .event-info-grid{grid-template-columns:1fr 1fr;gap:13px 12px}
+      .event-heading h3{font-size:1rem!important}
+      .event-count{text-align:left;padding:.2rem 0 .5rem}.event-count span,.event-count strong{display:inline!important;margin-right:.45rem;font-size:.82rem!important}
+      .stApp [data-testid="stTabs"] button[role="tab"]{font-size:.76rem!important;padding:.65rem .5rem!important}
+      /* Uma coluna de verdade no celular, inclusive para widgets Streamlit. */
+      .stApp [data-testid="stHorizontalBlock"]{flex-wrap:wrap!important;gap:.55rem!important}
+      .stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]{
+         flex:1 1 100%!important;width:100%!important;min-width:0!important}
+      .stApp [data-testid="stHorizontalBlock"] [data-testid="stColumn"] > div{min-width:0!important}
+      .stApp .stButton button,.stApp .stDownloadButton button,.stApp .stFormSubmitButton button{width:100%!important}
+      .step-header{margin-top:1.1rem}
     }
     </style>
     """, unsafe_allow_html=True)
@@ -421,8 +404,16 @@ def admin_logged_in():
     if not ADMIN_PASSWORD_HASH:
         return False
     if not st.session_state.get("admin_ok", False):
+        # O componente de cookies carrega assincronamente no navegador.
+        # Apos F5, conceder um curto tempo para hidratacao antes de exibir login.
         if not restore_admin_cookie():
+            attempts = st.session_state.get("admin_cookie_restore_attempts", 0)
+            if attempts < 3:
+                st.session_state.admin_cookie_restore_attempts = attempts + 1
+                time.sleep(0.65)
+                st.rerun()
             return False
+        st.session_state.admin_cookie_restore_attempts = 0
         st.session_state.admin_ok = True
         st.session_state.admin_last_activity = time.time()
     last_activity = st.session_state.get("admin_last_activity", 0)
@@ -559,6 +550,7 @@ def login_screen():
                 if verify_admin_password(password):
                     st.session_state.admin_ok = True
                     st.session_state.admin_last_activity = time.time()
+                    st.session_state.admin_cookie_restore_attempts = 0
                     st.session_state.login_attempts = 0
                     issue_admin_cookie()
                     st.rerun()
@@ -592,7 +584,7 @@ def admin_page():
     if st.session_state.pop("admin_delete_notice", None):
         st.success("Autorização excluída com sucesso. Atualize a lista para conferir.")
 
-    st.markdown('<div class="interface-version">Havruta · Design renovado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="interface-version">Havruta · Mobile UX v4</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-intro">
         <h1>Visão geral</h1>
@@ -670,14 +662,8 @@ def admin_page():
                 c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
 
                 url = make_public_url(ev.public_token)
-                u1, u2 = st.columns([3, 1])
-                with u1:
-                    st.text_input("Link para compartilhar", value=url, key=f"url_{ev.id}", label_visibility="collapsed")
-                with u2:
-                    st.button("Copiar link", key=f"copy_{ev.id}", use_container_width=True, on_click=lambda u=url: st.session_state.update({"copy_text": u}))
-
-                if st.session_state.get("copy_text") == url:
-                    st.info("Selecione e copie o link acima. (Em alguns navegadores, use o ícone de copiar no canto do bloco.)")
+                st.markdown('<div class="copy-hint">Link para compartilhar · toque no ícone de copiar à direita</div>', unsafe_allow_html=True)
+                st.code(url, language=None)
 
                 with st.expander("Editar ou excluir evento"):
                     with st.form(f"edit_{ev.id}"):
@@ -875,7 +861,7 @@ def parent_page(token):
             import logging
             logging.getLogger(__name__).warning("DRAFT_ENCRYPTION_KEY ausente; recuperação de rascunho indisponível.")
 
-        st.markdown('<div class="interface-version">Havruta · Design renovado</div>', unsafe_allow_html=True)
+        st.markdown('<div class="interface-version">Havruta · Mobile UX v4</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="parent-intro">
             <div class="parent-icon">
