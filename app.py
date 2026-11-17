@@ -552,6 +552,7 @@ def login_screen():
                     st.session_state.admin_last_activity = time.time()
                     st.session_state.admin_cookie_restore_attempts = 0
                     st.session_state.login_attempts = 0
+                    issue_admin_cookie()
                     # Nao reiniciar imediatamente: o componente de cookies precisa
                     # concluir a gravacao no navegador antes de ser desmontado.
                     st.success("Acesso autorizado. Sua sessao foi salva no navegador.")
