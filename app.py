@@ -552,11 +552,12 @@ def login_screen():
                     st.session_state.admin_last_activity = time.time()
                     st.session_state.admin_cookie_restore_attempts = 0
                     st.session_state.login_attempts = 0
-                    # Persistencia autenticada fora do st.session_state, para sobreviver ao F5.
-                    # A assinatura HMAC e o prazo de validade ja sao validados na recuperacao.
-                    issue_admin_cookie()
-                    st.session_state.admin_login_just_completed = True
-                    st.success("Senha validada. Acesso administrativo liberado.")
+                    # Nao reiniciar imediatamente: o componente de cookies precisa
+                    # concluir a gravacao no navegador antes de ser desmontado.
+                    st.success("Acesso autorizado. Sua sessao foi salva no navegador.")
+                    st.info("Clique abaixo para abrir o painel. Nas proximas atualizacoes, o acesso sera recuperado pelo cookie.")
+                    if st.button("Abrir painel administrativo", type="primary", use_container_width=True, key="open_admin_after_login"):
+                        st.rerun()
                 else:
                     attempts = st.session_state.get("login_attempts", 0) + 1
                     st.session_state.login_attempts = attempts
@@ -566,10 +567,6 @@ def login_screen():
                         st.error("Muitas tentativas. O acesso foi temporariamente bloqueado nesta sessão.")
                     else:
                         st.error("Senha incorreta.")
-            if st.session_state.get("admin_login_just_completed", False):
-                if st.button("Abrir painel administrativo", type="primary", use_container_width=True, key="open_admin_after_login"):
-                    st.session_state.admin_login_just_completed = False
-                    st.rerun()
         st.markdown('<div class="login-footer">Área exclusiva para a equipe responsável</div>', unsafe_allow_html=True)
 
 
@@ -591,7 +588,7 @@ def admin_page():
     if st.session_state.pop("admin_delete_notice", None):
         st.success("Autorização excluída com sucesso. Atualize a lista para conferir.")
 
-    st.markdown('<div class="interface-version">Havruta · Sessão corrigida v6</div>', unsafe_allow_html=True)
+    st.markdown('<div class="interface-version">Havruta · Mobile UX v4</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-intro">
         <h1>Visão geral</h1>
@@ -868,7 +865,7 @@ def parent_page(token):
             import logging
             logging.getLogger(__name__).warning("DRAFT_ENCRYPTION_KEY ausente; recuperação de rascunho indisponível.")
 
-        st.markdown('<div class="interface-version">Havruta · Sessão corrigida v6</div>', unsafe_allow_html=True)
+        st.markdown('<div class="interface-version">Havruta · Mobile UX v4</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="parent-intro">
             <div class="parent-icon">
