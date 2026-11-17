@@ -7,7 +7,8 @@ import time
 import unicodedata
 import json
 from cryptography.fernet import Fernet, InvalidToken
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
+from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 import pandas as pd
@@ -292,6 +293,7 @@ class Authorization(Base):
     child_name_key = Column(String(180), nullable=False)
     child_birthdate = Column(Date, nullable=False)
     parent_name = Column(String(180), nullable=False)
+    cell_leader_name = Column(String(180), nullable=True)
     parent_document = Column(String(40), nullable=False)
     parent_phone = Column(String(60), nullable=False)
     parent_email = Column(String(180), default="")
@@ -320,6 +322,14 @@ def initialize_database(_engine):
     # Verifica/cria apenas tabelas ausentes, uma vez por processo.
     # Não exclui nem altera registros existentes.
     Base.metadata.create_all(_engine)
+    # Migração segura para instalações existentes, sem perder autorizações.
+    with _engine.begin() as connection:
+        if _engine.dialect.name == "postgresql":
+            connection.execute(text("ALTER TABLE authorizations ADD COLUMN IF NOT EXISTS cell_leader_name VARCHAR(180)"))
+        elif _engine.dialect.name == "sqlite":
+            columns = [row[1] for row in connection.exec_driver_sql("PRAGMA table_info(authorizations)")]
+            if "cell_leader_name" not in columns:
+                connection.exec_driver_sql("ALTER TABLE authorizations ADD COLUMN cell_leader_name VARCHAR(180)")
     # Remover a restricao antiga no Neon/PostgreSQL sem apagar registros.
     # create_all nao remove restricoes de tabelas ja existentes.
     if _engine.dialect.name == "postgresql":
@@ -339,7 +349,7 @@ def db_session():
 # Rascunhos são criptografados no PostgreSQL e identificados por token aleatório.
 # O token permanece na URL para permitir restaurar após atualizar a página.
 DRAFT_FIELDS = (
-    "child_name", "child_birthdate", "parent_name", "parent_document", "relationship",
+    "child_name", "child_birthdate", "parent_name", "cell_leader_name", "parent_document", "relationship",
     "parent_phone", "parent_email", "emergency_contact", "emergency_phone",
     "health_notes", "declaration", "privacy"
 )
@@ -449,6 +459,16 @@ def make_public_url(token):
     return f"http://localhost:8502/?page=parent&token={quote(token)}"
 
 
+def signed_at_brasilia(value, with_seconds=True):
+    """Converte timestamps UTC (inclusive registros antigos sem timezone) para Brasilia."""
+    if value is None:
+        return "Data nao informada"
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    local = value.astimezone(ZoneInfo("America/Sao_Paulo"))
+    return local.strftime("%d/%m/%Y às %H:%M:%S" if with_seconds else "%d/%m/%Y %H:%M")
+
+
 def pdf_bytes(auth):
     with db_session() as db:
         event = db.get(Event, auth.event_id)
@@ -479,6 +499,7 @@ def pdf_bytes(auth):
         Spacer(1, 8),
         Paragraph("<b>IDENTIFICAÇÃO DO(A) RESPONSÁVEL</b>", styles["Heading2"]),
         Paragraph(f"Nome: {escape(auth.parent_name)}", styles["BodyText"]),
+        Paragraph(f"Líder de célula: {escape(auth.cell_leader_name or 'Não informado')}", styles["BodyText"]),
         Paragraph(f"Documento informado: {escape(auth.parent_document)}", styles["BodyText"]),
         Paragraph(f"Telefone: {escape(auth.parent_phone)}", styles["BodyText"]),
         Paragraph(f"E-mail: {escape(auth.parent_email or 'Não informado')}", styles["BodyText"]),
@@ -510,7 +531,7 @@ def pdf_bytes(auth):
     except Exception:
         story.append(Paragraph("Assinatura manuscrita capturada digitalmente.", styles["BodyText"]))
     story += [
-        Paragraph(f"Assinado em: {auth.signed_at.strftime('%d/%m/%Y às %H:%M:%S')} (horário UTC do servidor)", styles["Small"]),
+        Paragraph(f"Assinado em: {signed_at_brasilia(auth.signed_at)} (horário de Brasília)", styles["Small"]),
         Spacer(1, 10),
         Paragraph(f"<b>Responsável pela atividade:</b> {escape(event.responsible_name or 'Não informado')}", styles["BodyText"]),
         Paragraph(f"<b>Contato da organização:</b> {escape(event.responsible_phone or 'Não informado')}", styles["BodyText"]),
@@ -759,10 +780,11 @@ def admin_page():
                         "Participante": a.child_name,
                         "Nascimento": a.child_birthdate.strftime("%d/%m/%Y"),
                         "Responsável": a.parent_name,
+                        "Líder de célula": a.cell_leader_name or "Não informado",
                         "Vínculo": a.relationship_to_child,
                         "Telefone": a.parent_phone,
                         "E-mail": a.parent_email,
-                        "Assinado em": a.signed_at.strftime("%d/%m/%Y %H:%M:%S"),
+                        "Assinado em": signed_at_brasilia(a.signed_at),
                     } for a in rows]
                     if rows:
                         m1, m2 = st.columns([1, 3])
@@ -778,7 +800,7 @@ def admin_page():
                         for a in rows:
                             with st.container(border=True):
                                 col1, col2 = st.columns([3.5, 1])
-                                col1.markdown(f"**{escape(a.child_name)}** <br><span style='color:#64748B;font-size:0.88rem;'>Responsável: {escape(a.parent_name)} ({escape(a.relationship_to_child)}) · Assinado em {a.signed_at.strftime('%d/%m/%Y %H:%M')}</span>", unsafe_allow_html=True)
+                                col1.markdown(f"**{escape(a.child_name)}** <br><span style='color:#64748B;font-size:0.88rem;'>Responsável: {escape(a.parent_name)} ({escape(a.relationship_to_child)}) · Assinado em {signed_at_brasilia(a.signed_at, with_seconds=False)}</span>", unsafe_allow_html=True)
                                 # O PDF é preparado apenas sob demanda, evitando gerar
                                 # todos os comprovantes em cada atualização da página.
                                 pdf_key = f"pdf_ready_{a.id}"
@@ -844,7 +866,7 @@ def parent_page(token):
             delete_parent_draft(draft_hash)
             defaults = {
                 "child_name": "", "child_birthdate": date(2010, 1, 1),
-                "parent_name": "", "parent_document": "", "relationship": "Mãe",
+                "parent_name": "", "cell_leader_name": "", "parent_document": "", "relationship": "Mãe",
                 "parent_phone": "", "parent_email": "", "emergency_contact": "",
                 "emergency_phone": "", "health_notes": "", "declaration": False,
                 "privacy": False,
@@ -926,6 +948,7 @@ def parent_page(token):
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
                 parent_name = st.text_input("Nome completo do responsável *", on_change=autosave, key=draft_key("parent_name"))
+                st.text_input("Nome do líder de célula *", placeholder="Informe o nome completo do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
                 r1, r2 = st.columns(2)
                 parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", on_change=autosave, key=draft_key("parent_document"))
                 relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], on_change=autosave, key=draft_key("relationship"))
@@ -1019,6 +1042,7 @@ def parent_page(token):
             child_name = st.session_state.get(draft_key("child_name"), "")
             child_birthdate = st.session_state.get(draft_key("child_birthdate"), date(2010, 1, 1))
             parent_name = st.session_state.get(draft_key("parent_name"), "")
+            cell_leader_name = st.session_state.get(draft_key("cell_leader_name"), "")
             parent_document = st.session_state.get(draft_key("parent_document"), "")
             relationship = st.session_state.get(draft_key("relationship"), "Mãe")
             parent_phone = st.session_state.get(draft_key("parent_phone"), "")
@@ -1031,6 +1055,7 @@ def parent_page(token):
             errors = []
             if not child_name.strip(): errors.append("Informe o nome completo do participante.")
             if not parent_name.strip(): errors.append("Informe o nome completo do responsável.")
+            if not cell_leader_name.strip(): errors.append("Informe o nome do líder de célula.")
             if not parent_document.strip(): errors.append("Informe um documento de identificação.")
             if not parent_phone.strip(): errors.append("Informe o telefone do responsável.")
             if not emergency_contact.strip() or not emergency_phone.strip(): errors.append("Informe um contato de emergência.")
@@ -1048,7 +1073,7 @@ def parent_page(token):
                 auth = Authorization(
                     event_id=event_id, child_name=child_name.strip(), child_name_key=child_key,
                     child_birthdate=child_birthdate,
-                    parent_name=parent_name.strip(), parent_document=parent_document.strip(),
+                    parent_name=parent_name.strip(), cell_leader_name=cell_leader_name.strip(), parent_document=parent_document.strip(),
                     parent_phone=parent_phone.strip(), parent_email=parent_email.strip(),
                     relationship_to_child=relationship, emergency_contact=emergency_contact.strip(),
                     emergency_phone=emergency_phone.strip(), health_notes=health_notes.strip(),
@@ -1063,7 +1088,7 @@ def parent_page(token):
                         db.commit()
                         delete_parent_draft(draft_hash)
                         st.success("Autorização enviada com sucesso!")
-                        st.info("A equipe organizadora recebeu sua autorização.")
+                        st.info("A equipe organizadora recebeu sua autorização. Para solicitar uma cópia ou corrigir alguma informação, entre em contato diretamente com a organização.")
                 except Exception as exc:
                     st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
                     if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
