@@ -16,7 +16,7 @@ from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 from sqlalchemy import (
     create_engine, Column, String, Text, Date, DateTime, LargeBinary,
-    ForeignKey, Boolean, UniqueConstraint, select, desc
+    ForeignKey, Boolean, UniqueConstraint, select, desc, func
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.engine import URL
@@ -152,6 +152,34 @@ def inject_custom_css():
     [data-testid="stSidebar"] [data-testid="stAlert"] {border-radius:8px!important;}
     @media(max-width:700px) {.hero-banner{padding:1.1rem!important;}.hero-banner h1{font-size:1.25rem!important;}
       [data-testid="stVerticalBlockBorderWrapper"]{padding:.75rem!important;}}
+    /* Layout responsivo: evitar overflow e garantir largura legível */
+    [data-testid="stMainBlockContainer"] {
+      max-width:1120px!important;
+      padding-top:1.25rem!important;
+      padding-left:clamp(.75rem,3vw,2rem)!important;
+      padding-right:clamp(.75rem,3vw,2rem)!important;
+    }
+    .stApp [data-testid="stDataFrame"],.stApp [data-testid="stTable"],
+    .stApp [data-testid="stCodeBlock"] {max-width:100%;overflow-x:auto;}
+    .stApp [data-testid="stFileUploader"],.stApp [data-testid="stDateInput"],
+    .stApp [data-testid="stSelectbox"],.stApp [data-testid="stTextInput"],
+    .stApp [data-testid="stTextArea"] {color-scheme:light!important;}
+    .stApp [data-baseweb="button"],.stApp button {min-height:42px;}
+    .stApp [data-testid="stCanvas"] {max-width:100%;}
+    .stApp [data-testid="stWidgetLabel"] {font-weight:550;}
+    @media(max-width:700px) {
+      [data-testid="stMainBlockContainer"] {padding:.7rem .75rem 2rem!important;}
+      .parent-intro {padding:.5rem 0 1rem!important;}
+      .parent-intro h1,.section-intro h1 {font-size:1.35rem!important;}
+      .event-info-grid {grid-template-columns:1fr!important;gap:.65rem!important;}
+      .stApp [data-testid="stHorizontalBlock"] {flex-wrap:wrap!important;}
+      .stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+        min-width:min(100%,250px)!important;flex:1 1 100%!important;
+      }
+      .stTabs [data-baseweb="tab-list"] {overflow-x:auto;flex-wrap:nowrap;}
+      .stTabs [data-baseweb="tab"] {white-space:nowrap;}
+      .login-intro {margin:.6rem auto 1rem!important;}
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -253,7 +281,14 @@ class AuthorizationDraft(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
-Base.metadata.create_all(engine)
+@st.cache_resource(show_spinner=False)
+def initialize_database(_engine):
+    # Verifica/cria apenas tabelas ausentes, uma vez por processo.
+    # Não exclui nem altera registros existentes.
+    Base.metadata.create_all(_engine)
+    return True
+
+initialize_database(engine)
 
 
 def db_session():
@@ -520,7 +555,11 @@ def admin_page():
 
     with db_session() as db:
         events = db.scalars(select(Event).order_by(desc(Event.created_at))).all()
-        total_auths = len(db.scalars(select(Authorization)).all())
+        total_auths = db.scalar(select(func.count(Authorization.id))) or 0
+        event_auth_counts = dict(db.execute(
+            select(Authorization.event_id, func.count(Authorization.id))
+            .group_by(Authorization.event_id)
+        ).all())
 
     k1, k2, k3 = st.columns(3)
     k1.metric("Eventos", len(events))
@@ -535,11 +574,7 @@ def admin_page():
     except ValueError:
         review_days = 30
     today = date.today()
-    with db_session() as retention_db:
-        auth_counts = dict(
-            retention_db.query(Authorization.event_id, __import__("sqlalchemy").func.count(Authorization.id))
-            .group_by(Authorization.event_id).all()
-        )
+    auth_counts = event_auth_counts
     pending_reviews = [
         (event, auth_counts.get(event.id, 0), event.event_date + timedelta(days=review_days))
         for event in events
@@ -581,9 +616,7 @@ def admin_page():
                 if ev.departure_time or ev.return_time:
                     c1.caption(f"🕒 Saída: {ev.departure_time or '—'} | Retorno: {ev.return_time or '—'}")
 
-                with db_session() as count_db:
-                    auth_count = len(count_db.scalars(select(Authorization).where(Authorization.event_id == ev.id)).all())
-                c2.metric("Assinaturas", auth_count)
+                c2.metric("Assinaturas", event_auth_counts.get(ev.id, 0))
 
                 url = make_public_url(ev.public_token)
                 u1, u2 = st.columns([4, 1])
@@ -701,10 +734,18 @@ def admin_page():
                             with st.container(border=True):
                                 col1, col2 = st.columns([3.5, 1])
                                 col1.markdown(f"**{escape(a.child_name)}** <br><span style='color:#64748B;font-size:0.88rem;'>Responsável: {escape(a.parent_name)} ({escape(a.relationship_to_child)}) · Assinado em {a.signed_at.strftime('%d/%m/%Y %H:%M')}</span>", unsafe_allow_html=True)
-                                col2.download_button(
-                                    "Baixar PDF", data=pdf_bytes(a), file_name=f"autorizacao_{a.child_name.replace(' ', '_')}.pdf",
-                                    mime="application/pdf", key=f"pdf_{a.id}", use_container_width=True
-                                )
+                                # O PDF é preparado apenas sob demanda, evitando gerar
+                                # todos os comprovantes em cada atualização da página.
+                                pdf_key = f"pdf_ready_{a.id}"
+                                if col2.button("Preparar PDF", key=f"prepare_{a.id}", use_container_width=True):
+                                    st.session_state[pdf_key] = pdf_bytes(a)
+                                if pdf_key in st.session_state:
+                                    col2.download_button(
+                                        "Baixar PDF", data=st.session_state[pdf_key],
+                                        file_name=f"autorizacao_{a.id}.pdf",
+                                        mime="application/pdf", key=f"pdf_{a.id}",
+                                        use_container_width=True
+                                    )
                                 # Exclusão individual com confirmação para evitar remoção acidental.
                                 with st.expander("Excluir esta autorização"):
                                     st.caption("Esta ação exclui permanentemente o registro e a assinatura digital.")
@@ -875,10 +916,9 @@ def parent_page(token):
                 stroke_color="#1E1B4B",
                 background_color="#FFFFFF",
                 height=170,
-                width=420,
+                width=280,
                 drawing_mode="freedraw",
                 key=f"signature_{event_id}_{st.session_state.get(f'signature_nonce_{event_id}', 0)}",
-                return_image_data=True,
             )
 
             st.write("")
