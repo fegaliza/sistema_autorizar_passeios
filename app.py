@@ -146,10 +146,27 @@ def inject_custom_css():
     .admin-kpi {background:#fff;border:1px solid #E9DFFF;border-radius:11px;padding:12px 14px;min-width:0;}
     .admin-kpi-label {font-size:.83rem;color:#52647B!important;line-height:1.3;}
     .admin-kpi-value {font-size:1.75rem;font-weight:700;line-height:1.2;margin-top:4px;color:#172B4D!important;}
-    .parent-intro {text-align:center;padding:1.1rem 0 1.5rem;}
-    .parent-intro h1 {font-size:1.7rem;color:var(--navy)!important;margin:.4rem 0;}
-    .parent-intro p {color:var(--muted)!important;max-width:650px;margin:0 auto;}
-    .parent-icon {display:inline-flex;align-items:center;justify-content:center;background:#F3EEFF;border-radius:14px;width:52px;height:52px;color:#6D28D9;}
+    .parent-intro {text-align:center;padding:5rem 0 0.8rem;}
+    .parent-intro h1 {
+    font-size: 1.35rem !important;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: .5rem 0 .4rem !important;
+}
+
+.parent-intro p {
+    font-size: .88rem !important;
+    line-height: 1.45;
+    color: #52647B !important;
+    max-width: 330px;
+    margin: 0 auto !important;
+}
+
+.parent-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+}
     .event-guidance {background:#F8F5FF;border:1px solid #EDE9FE;border-radius:9px;padding:.85rem 1rem;color:var(--navy)!important;margin:.7rem 0;}
     .event-guidance strong {color:var(--navy)!important;}
     .signature-area {max-width:100%;overflow-x:auto;}
@@ -172,10 +189,19 @@ def inject_custom_css():
     .stApp [data-baseweb="button"],.stApp button {min-height:42px;}
     .stApp [data-testid="stCanvas"] {max-width:100%;}
     .stApp [data-testid="stWidgetLabel"] {font-weight:550;}
-    @media(max-width:700px) {
-      [data-testid="stMainBlockContainer"] {padding:.7rem .75rem 2rem!important;}
-      .parent-intro {padding:.5rem 0 1rem!important;}
-      .parent-intro h1,.section-intro h1 {font-size:1.35rem!important;}
+    @media (max-width: 700px) {
+    .parent-intro {
+        padding: .3rem 0 .7rem !important;
+    }
+
+    .parent-intro h1 {
+        font-size: 1.25rem !important;
+    }
+
+    .parent-intro p {
+        font-size: .85rem !important;
+    }
+}
       .event-info-grid {grid-template-columns:1fr!important;gap:.65rem!important;}
       .stApp [data-testid="stHorizontalBlock"] {flex-wrap:wrap!important;}
       .stApp [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
@@ -837,7 +863,7 @@ def parent_page(token):
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
             </div>
             <h1>Autorização de Participação</h1>
-            <p>Este formulário é destinado aos responsáveis legais por participantes menores de 18 anos. Preencha as informações abaixo para autorizar a participação na atividade.</p>
+            <p>Autorize a participação do menor de 18 anos na atividade.</p>
         </div>
         """, unsafe_allow_html=True)
 
