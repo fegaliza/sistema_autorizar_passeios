@@ -210,8 +210,8 @@ SESSION_TIMEOUT_SECONDS = 20 * 60
 MAX_LOGIN_ATTEMPTS = 5
 LOGIN_LOCK_SECONDS = 5 * 60
 APP_BASE_URL = setting("APP_BASE_URL", "").rstrip("/")
-CONTROLLER_NAME = setting("CONTROLLER_NAME", "Organização responsável (configurar CONTROLLER_NAME)")
-CONTROLLER_EMAIL = setting("CONTROLLER_EMAIL", "")
+CONTROLLER_NAME = setting("CONTROLLER_NAME", "Comunidade / organização responsável")
+CONTROLLER_EMAIL = setting("CONTROLLER_EMAIL", "Informe o e-mail de contato")
 PRIVACY_URL = setting("PRIVACY_URL", "")
 RETENTION_NOTICE = setting(
     "RETENTION_NOTICE",
@@ -903,72 +903,29 @@ def parent_page(token):
             st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Confirmação e assinatura</p></div>', unsafe_allow_html=True)
             st.markdown(
                 "Declaro ser responsável legal pelo participante menor de 18 anos "
-                "identificado neste formulário e autorizo sua participação na atividade "
-                "descrita acima. Confirmo que as informações fornecidas são verdadeiras."
+    "identificado neste formulário e autorizo sua participação na atividade "
+    "descrita acima. Confirmo que as informações fornecidas são verdadeiras."
             )
-
-            st.markdown("#### 🛡️ Privacidade e proteção dos dados")
-            st.markdown(
-                "Seus dados e os do participante são solicitados para registrar esta autorização "
-                "e apoiar a organização e a segurança da atividade. Leia abaixo como essas informações são tratadas."
-            )
-            with st.expander("Entenda como seus dados são utilizados (LGPD)", expanded=False):
-                st.markdown("**Quem é responsável pelo tratamento?**")
-                st.write(CONTROLLER_NAME)
-                st.markdown("**Quais informações são coletadas?**")
-                st.write(
-                    "Identificação e data de nascimento do participante; identificação, documento e "
-                    "contato do responsável legal; contato de emergência; informações adicionais "
-                    "que você optar por fornecer; confirmações e assinatura."
-                )
-                st.markdown("**Para que são utilizadas?**")
-                st.write(
-                    "Para registrar e comprovar a autorização, organizar a atividade, "
-                    "contatar responsáveis e auxiliar em situações de emergência."
-                )
-                st.markdown("**Quem pode ter acesso?**")
-                st.write(
-                    "O acesso deve ser restrito às pessoas autorizadas que necessitem "
-                    "das informações para essas finalidades. A organização deve informar "
-                    "eventuais prestadores de serviços e compartilhamentos aplicáveis em seu aviso completo."
-                )
-                st.markdown("**Informações de saúde e de menores de idade**")
-                st.write(
-                    "Informe somente o necessário para o cuidado durante a atividade. "
-                    "Dados de saúde exigem proteção especial, e o tratamento de dados de "
-                    "crianças e adolescentes deve observar seu melhor interesse."
-                )
-                st.markdown("**Por quanto tempo são mantidas?**")
-                st.write(RETENTION_NOTICE)
-                st.caption(
-                    "O sistema não exclui automaticamente as autorizações ao final da atividade. "
-                    "O prazo efetivo deve ser definido e aplicado pela organização."
-                )
-                st.markdown("**Quais são seus direitos?**")
-                st.write(
-                    "Você pode solicitar informações sobre o tratamento, acesso e correção "
-                    "dos dados e, quando aplicável, exclusão e outros direitos previstos na LGPD."
-                )
-                if CONTROLLER_EMAIL and "@" in CONTROLLER_EMAIL:
-                    st.write(f"Canal para solicitações: {CONTROLLER_EMAIL}")
-                else:
-                    st.warning("Canal de privacidade ainda não informado pela organização.")
-                if PRIVACY_URL:
-                    st.markdown(f"[Consultar o aviso de privacidade completo]({PRIVACY_URL})")
-                else:
-                    st.caption("O aviso de privacidade completo ainda não foi disponibilizado pela organização.")
-            st.caption("Leia as informações de privacidade antes de marcar as confirmações abaixo.")
-
             @st.fragment
             def confirmacoes_do_responsavel():
-                declaration = st.checkbox("Li as informações da atividade e autorizo a participação do participante identificado acima. *", key=draft_key("declaration"), on_change=autosave)
+                declaration = st.checkbox("Li as informações e autorizo a participação do participante identificado acima. *", key=draft_key("declaration"), on_change=autosave)
                 privacy = st.checkbox(
-                    f"Li as informações de privacidade e estou ciente de que meus dados e os dados do participante serão tratados pela organização ({CONTROLLER_NAME}) "
-                    f"para registrar a autorização, organizar a atividade e apoiar situações relacionadas à segurança. "
-                    " *", key=draft_key("privacy"), on_change=autosave
+                    f"Li as informações de privacidade e estou ciente de que meus dados e os do participante "
+                    f"serão tratados pela organização ({CONTROLLER_NAME}) para registrar a autorização, "
+                    f"organizar a atividade e atender necessidades de contato e segurança. *", key=draft_key("privacy"), on_change=autosave
                 )
 
             confirmacoes_do_responsavel()
+            st.caption(RETENTION_NOTICE)
+            st.markdown(
+                '<a href="?page=privacy" target="_blank" rel="noopener noreferrer">'
+                '🔒 Saiba como seus dados são utilizados (Privacidade e LGPD)</a>',
+                unsafe_allow_html=True,
+            )
+            st.caption("O aviso abre em outra aba para você continuar preenchendo este formulário.")
+            if PRIVACY_URL:
+                st.markdown(f"[Consultar política de privacidade oficial da organização]({PRIVACY_URL})")
+
             st.write("")
             st.markdown('<div class="signature-box-hint">✍️ <strong>Assinatura do responsável legal:</strong> desenhe sua assinatura com o dedo ou mouse no quadro branco abaixo.</div>', unsafe_allow_html=True)
             canvas = st_canvas(
@@ -1069,12 +1026,61 @@ def parent_page(token):
                             st.exception(exc)
 
 
+def privacy_page():
+    """Aviso público simples, sem acesso aos registros de autorizações."""
+    _, content, _ = st.columns([0.2, 4, 0.2])
+    with content:
+        st.markdown("# 🔒 Privacidade dos seus dados")
+        st.write(
+            "Este aviso explica como as informações fornecidas no Portal de Autorizações "
+            "são utilizadas para organizar atividades da igreja envolvendo participantes menores de 18 anos."
+        )
+        with st.container(border=True):
+            st.markdown("#### Para que pedimos esses dados?")
+            st.write(
+                "Para identificar o participante e seu responsável legal, registrar a autorização, "
+                "organizar a atividade e entrar em contato quando necessário, inclusive em emergências."
+            )
+            st.markdown("#### Quais dados são solicitados?")
+            st.write(
+                "Nome e data de nascimento do participante; nome, documento, vínculo e contatos "
+                "do responsável; contato de emergência; assinatura e eventuais informações adicionais."
+            )
+            st.caption(
+                "No campo de informações adicionais, informe somente o que for necessário "
+                "para o cuidado do participante durante a atividade."
+            )
+            st.markdown("#### Quem pode consultar as informações?")
+            st.write(
+                "O acesso administrativo aos registros é destinado a pessoas selecionadas "
+                "da liderança da igreja, responsáveis pela organização das atividades. "
+                "A aplicação também utiliza serviços de hospedagem e armazenamento para processar os dados."
+            )
+            st.markdown("#### Por quanto tempo ficam armazenados?")
+            st.write(RETENTION_NOTICE)
+            st.markdown("#### Como tirar dúvidas ou solicitar informações?")
+            st.write(
+                "O responsável pode pedir informações sobre o uso dos dados e solicitar "
+                "acesso, correção ou exclusão, quando aplicável, pelo contato indicado abaixo."
+            )
+            st.write(f"**Organização responsável:** {CONTROLLER_NAME}")
+            st.write(f"**Contato:** {CONTROLLER_EMAIL}")
+        if PRIVACY_URL:
+            st.markdown(f"[Consultar aviso de privacidade da organização]({PRIVACY_URL})")
+        st.caption(
+            "O tratamento dos dados deve observar a LGPD e o melhor interesse dos participantes menores de idade."
+        )
+        st.caption("Você pode fechar esta aba para retornar ao formulário de autorização.")
+
+
 def main():
     params = st.query_params
     page = params.get("page", "admin")
     if page == "parent":
         token = params.get("token", "")
         parent_page(token)
+    elif page == "privacy":
+        privacy_page()
     else:
         admin_page()
 
