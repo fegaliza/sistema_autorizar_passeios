@@ -404,13 +404,13 @@ def admin_logged_in():
     if not ADMIN_PASSWORD_HASH:
         return False
     if not st.session_state.get("admin_ok", False):
-        # O componente de cookies carrega assincronamente no navegador.
-        # Apos F5, conceder um curto tempo para hidratacao antes de exibir login.
+        # CookieController depende de um componente frontend. A leitura inicial
+        # pode estar vazia ate o navegador concluir a hidratacao.
         if not restore_admin_cookie():
             attempts = st.session_state.get("admin_cookie_restore_attempts", 0)
-            if attempts < 3:
+            if attempts < 5:
                 st.session_state.admin_cookie_restore_attempts = attempts + 1
-                time.sleep(0.65)
+                time.sleep(0.5)
                 st.rerun()
             return False
         st.session_state.admin_cookie_restore_attempts = 0
@@ -552,8 +552,12 @@ def login_screen():
                     st.session_state.admin_last_activity = time.time()
                     st.session_state.admin_cookie_restore_attempts = 0
                     st.session_state.login_attempts = 0
-                    issue_admin_cookie()
-                    st.rerun()
+                    # Nao reiniciar imediatamente: o componente de cookies precisa
+                    # concluir a gravacao no navegador antes de ser desmontado.
+                    st.success("Acesso autorizado. Sua sessao foi salva no navegador.")
+                    st.info("Clique abaixo para abrir o painel. Nas proximas atualizacoes, o acesso sera recuperado pelo cookie.")
+                    if st.button("Abrir painel administrativo", type="primary", use_container_width=True, key="open_admin_after_login"):
+                        st.rerun()
                 else:
                     attempts = st.session_state.get("login_attempts", 0) + 1
                     st.session_state.login_attempts = attempts
