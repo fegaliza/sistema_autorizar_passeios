@@ -863,34 +863,41 @@ def parent_page(token):
                 org_parts.append(f"**Emergências:** {event_data['emergency_phone']}")
             st.caption("  ·  ".join(org_parts))
 
-        with st.container(border=True):
-            st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do adolescente</p></div>', unsafe_allow_html=True)
-            c1, c2 = st.columns([2, 1])
-            child_name = c1.text_input("Nome completo do adolescente *", key=draft_key("child_name"), on_change=autosave)
-            child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"), on_change=autosave)
+        # Atualiza apenas os campos durante o salvamento automatico.
+        # O cabecalho e o componente de assinatura nao sao redesenhados.
+        @st.fragment
+        def campos_do_responsavel():
+            with st.container(border=True):
+                st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do adolescente</p></div>', unsafe_allow_html=True)
+                c1, c2 = st.columns([2, 1])
+                child_name = c1.text_input("Nome completo do adolescente *", key=draft_key("child_name"), on_change=autosave)
+                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"), on_change=autosave)
 
-        with st.container(border=True):
-            st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
-            parent_name = st.text_input("Nome completo do responsável *", key=draft_key("parent_name"), on_change=autosave)
-            r1, r2 = st.columns(2)
-            parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", key=draft_key("parent_document"), on_change=autosave)
-            relationship = r2.selectbox("Vínculo com o adolescente *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"), on_change=autosave)
-            r3, r4 = st.columns(2)
-            parent_phone = r3.text_input("Telefone/WhatsApp *", key=draft_key("parent_phone"), on_change=autosave)
-            parent_email = r4.text_input("E-mail (opcional)", key=draft_key("parent_email"), on_change=autosave)
+            with st.container(border=True):
+                st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
+                parent_name = st.text_input("Nome completo do responsável *", key=draft_key("parent_name"), on_change=autosave)
+                r1, r2 = st.columns(2)
+                parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", key=draft_key("parent_document"), on_change=autosave)
+                relationship = r2.selectbox("Vínculo com o adolescente *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"), on_change=autosave)
+                r3, r4 = st.columns(2)
+                parent_phone = r3.text_input("Telefone/WhatsApp *", key=draft_key("parent_phone"), on_change=autosave)
+                parent_email = r4.text_input("E-mail (opcional)", key=draft_key("parent_email"), on_change=autosave)
 
-        with st.container(border=True):
-            st.markdown('<div class="step-header"><span class="step-number">3</span><p class="step-title">Contato para emergência</p></div>', unsafe_allow_html=True)
-            e1, e2 = st.columns(2)
-            emergency_contact = e1.text_input("Nome do contato de emergência *", key=draft_key("emergency_contact"), on_change=autosave)
-            emergency_phone = e2.text_input("Telefone do contato de emergência *", key=draft_key("emergency_phone"), on_change=autosave)
+            with st.container(border=True):
+                st.markdown('<div class="step-header"><span class="step-number">3</span><p class="step-title">Contato para emergência</p></div>', unsafe_allow_html=True)
+                e1, e2 = st.columns(2)
+                emergency_contact = e1.text_input("Nome do contato de emergência *", key=draft_key("emergency_contact"), on_change=autosave)
+                emergency_phone = e2.text_input("Telefone do contato de emergência *", key=draft_key("emergency_phone"), on_change=autosave)
 
-        with st.container(border=True):
-            st.markdown('<div class="step-header"><span class="step-number">4</span><p class="step-title">Informações importantes</p></div>', unsafe_allow_html=True)
-            health_notes = st.text_area(
-                "Há alguma informação que a equipe precisa saber para a segurança do adolescente? (opcional)",
-                help="Evite incluir detalhes desnecessários. Informe somente o estritamente necessário para o cuidado durante a atividade.", key=draft_key("health_notes"), on_change=autosave
-            )
+            with st.container(border=True):
+                st.markdown('<div class="step-header"><span class="step-number">4</span><p class="step-title">Informações importantes</p></div>', unsafe_allow_html=True)
+                health_notes = st.text_area(
+                    "Há alguma informação que a equipe precisa saber para a segurança do adolescente? (opcional)",
+                    help="Evite incluir detalhes desnecessários. Informe somente o estritamente necessário para o cuidado durante a atividade.", key=draft_key("health_notes"), on_change=autosave
+                )
+
+
+        campos_do_responsavel()
 
         with st.container(border=True):
             st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Declaração, privacidade e assinatura</p></div>', unsafe_allow_html=True)
@@ -898,12 +905,16 @@ def parent_page(token):
                 f"Eu, responsável legal identificado(a) acima, autorizo a participação do(a) adolescente neste evento, "
                 f"conforme os dados e orientações apresentados nesta página. Declaro que as informações fornecidas são verdadeiras."
             )
-            declaration = st.checkbox("Li as informações do passeio e autorizo a participação do adolescente. *", key=draft_key("declaration"), on_change=autosave)
-            privacy = st.checkbox(
-                f"Estou ciente de que meus dados e os dados do adolescente serão utilizados pela organização ({CONTROLLER_NAME}) "
-                f"exclusivamente para administrar esta autorização, organizar a atividade e tratar situações relacionadas à segurança. "
-                f"Sei que posso solicitar informações sobre o tratamento pelo contato {CONTROLLER_EMAIL}. *", key=draft_key("privacy"), on_change=autosave
-            )
+            @st.fragment
+            def confirmacoes_do_responsavel():
+                declaration = st.checkbox("Li as informações do passeio e autorizo a participação do adolescente. *", key=draft_key("declaration"), on_change=autosave)
+                privacy = st.checkbox(
+                    f"Estou ciente de que meus dados e os dados do adolescente serão utilizados pela organização ({CONTROLLER_NAME}) "
+                    f"exclusivamente para administrar esta autorização, organizar a atividade e tratar situações relacionadas à segurança. "
+                    f"Sei que posso solicitar informações sobre o tratamento pelo contato {CONTROLLER_EMAIL}. *", key=draft_key("privacy"), on_change=autosave
+                )
+
+            confirmacoes_do_responsavel()
             st.caption(RETENTION_NOTICE)
             if PRIVACY_URL:
                 st.markdown(f"[Leia o aviso de privacidade completo]({PRIVACY_URL})")
@@ -933,6 +944,20 @@ def parent_page(token):
                 )
 
         if submitted:
+            # Fragmentos possuem escopo local; os valores atuais dos widgets
+            # sao obtidos do Session State, inclusive apos reruns parciais.
+            child_name = st.session_state.get(draft_key("child_name"), "")
+            child_birthdate = st.session_state.get(draft_key("child_birthdate"), date(2010, 1, 1))
+            parent_name = st.session_state.get(draft_key("parent_name"), "")
+            parent_document = st.session_state.get(draft_key("parent_document"), "")
+            relationship = st.session_state.get(draft_key("relationship"), "Mãe")
+            parent_phone = st.session_state.get(draft_key("parent_phone"), "")
+            parent_email = st.session_state.get(draft_key("parent_email"), "")
+            emergency_contact = st.session_state.get(draft_key("emergency_contact"), "")
+            emergency_phone = st.session_state.get(draft_key("emergency_phone"), "")
+            health_notes = st.session_state.get(draft_key("health_notes"), "")
+            declaration = st.session_state.get(draft_key("declaration"), False)
+            privacy = st.session_state.get(draft_key("privacy"), False)
             errors = []
             if not child_name.strip(): errors.append("Informe o nome completo do adolescente.")
             if not parent_name.strip(): errors.append("Informe o nome completo do responsável.")
