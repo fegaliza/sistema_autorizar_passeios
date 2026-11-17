@@ -553,12 +553,7 @@ def login_screen():
                     st.session_state.admin_cookie_restore_attempts = 0
                     st.session_state.login_attempts = 0
                     issue_admin_cookie()
-                    # Nao reiniciar imediatamente: o componente de cookies precisa
-                    # concluir a gravacao no navegador antes de ser desmontado.
-                    st.success("Acesso autorizado. Sua sessao foi salva no navegador.")
-                    st.info("Clique abaixo para abrir o painel. Nas proximas atualizacoes, o acesso sera recuperado pelo cookie.")
-                    if st.button("Abrir painel administrativo", type="primary", use_container_width=True, key="open_admin_after_login"):
-                        st.rerun()
+                    st.rerun()
                 else:
                     attempts = st.session_state.get("login_attempts", 0) + 1
                     st.session_state.login_attempts = attempts
