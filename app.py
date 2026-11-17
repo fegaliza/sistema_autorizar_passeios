@@ -715,7 +715,11 @@ def admin_page():
                 col_a, col_b = st.columns(2)
                 title = col_a.text_input("Nome do evento *", placeholder="Ex.: Confraternização Havruta 2026")
                 destination = col_b.text_input("Destino *", placeholder="Ex.: Parque / sítio / cidade")
-                event_date = col_a.date_input("Data do passeio", value=date.today())
+                event_date = ec1.date_input(
+    "Data",
+    value=ev.event_date,
+    format="DD/MM/YYYY"
+)
                 meeting = col_b.text_input("Ponto de encontro", placeholder="Endereço ou local")
                 departure = col_a.text_input("Horário de saída", placeholder="08:00")
                 ret = col_b.text_input("Horário previsto de retorno", placeholder="18:00")
@@ -914,7 +918,7 @@ def parent_page(token):
                 st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
                 child_name = c1.text_input("Nome completo do participante *", key=draft_key("child_name"))
-                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"))
+                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), format="DD/MM/YYYY", key=draft_key("child_birthdate"))
 
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
