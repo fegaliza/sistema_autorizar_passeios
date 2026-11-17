@@ -8,11 +8,11 @@ import secrets
 import time
 import unicodedata
 import json
+import streamlit.components.v1 as components
 from cryptography.fernet import Fernet, InvalidToken
 from datetime import datetime, date, timedelta, timezone
 from zoneinfo import ZoneInfo
 from urllib.parse import quote
-
 import pandas as pd
 import streamlit as st
 from PIL import Image
@@ -661,8 +661,91 @@ def admin_page():
                 c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
 
                 url = make_public_url(ev.public_token)
-                st.caption("🔗 Link para compartilhar com os responsáveis:")
-                st.code(url, language=None)
+
+st.caption("🔗 Link para compartilhar com os responsáveis:")
+
+components.html(
+    f"""
+    <div style="font-family:Arial,sans-serif;">
+        <div style="
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:8px;
+            border:1px solid #E7E9F0;
+            border-radius:9px;
+            background:#FFFFFF;
+        ">
+            <input
+                id="link"
+                type="text"
+                value="{escape(url, {'"': '&quot;'})}"
+                readonly
+                style="
+                    flex:1;
+                    min-width:0;
+                    border:none;
+                    outline:none;
+                    background:transparent;
+                    color:#20253B;
+                    font-size:13px;
+                "
+            >
+
+            <button
+                id="copiar"
+                onclick="copiarLink()"
+                style="
+                    background:#6343B6;
+                    color:white;
+                    border:none;
+                    border-radius:7px;
+                    padding:10px 14px;
+                    cursor:pointer;
+                    font-weight:600;
+                    white-space:nowrap;
+                "
+            >
+                Copiar link
+            </button>
+        </div>
+
+        <div id="mensagem" role="status" aria-live="polite"
+             style="font-size:12px;margin-top:7px;"></div>
+    </div>
+
+    <script>
+    async function copiarLink() {{
+        const input = document.getElementById("link");
+        const mensagem = document.getElementById("mensagem");
+        const botao = document.getElementById("copiar");
+
+        try {{
+            if (navigator.clipboard && window.isSecureContext) {{
+                await navigator.clipboard.writeText(input.value);
+            }} else {{
+                input.focus();
+                input.select();
+                const copiou = document.execCommand("copy");
+                if (!copiou) throw new Error("Falha ao copiar");
+            }}
+
+            mensagem.textContent = "✓ Link copiado com sucesso!";
+            mensagem.style.color = "#16804A";
+            botao.textContent = "✓ Copiado!";
+        }} catch (erro) {{
+            mensagem.textContent =
+                "Não foi possível copiar automaticamente. Selecione o link e copie manualmente.";
+            mensagem.style.color = "#B45309";
+            input.focus();
+            input.select();
+        }}
+    }}
+    </script>
+    """,
+    height=94,
+    scrolling=False,
+)
 
                 with st.expander("Editar ou excluir evento"):
                     with st.form(f"edit_{ev.id}"):
