@@ -44,215 +44,72 @@ st.set_page_config(
 
 
 def inject_custom_css():
-    """Tema claro fixo: superfícies brancas e texto azul-escuro em todos os campos."""
+    """Estilo minimalista, sem contornos de containers; responsivo."""
     st.markdown("""
     <style>
-    :root { color-scheme:light; --navy:#172B4D; --muted:#52647B; --line:#DCE3EE; --purple:#6D28D9; --pale:#F6F2FF; }
-    html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stHeader"],
-    [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
-      background:#FFFFFF!important;color:var(--navy)!important;color-scheme:light!important;
-    }
-    .stApp {background:linear-gradient(125deg,#FAF8FF 0%,#FFFFFF 26%,#FFFFFF 80%,#FAF8FF 100%)!important;}
-    [data-testid="stMarkdownContainer"] p,[data-testid="stWidgetLabel"] p,
-    [data-testid="stCaptionContainer"] p,.stApp h1,.stApp h2,.stApp h3,.stApp h4,
-    .stApp label {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
-    [data-testid="stCaptionContainer"] p {color:var(--muted)!important;-webkit-text-fill-color:var(--muted)!important;}
-    /* Evita contornos aninhados nos containers, inclusive em telas pequenas. */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-      background:transparent!important;border:0!important;
-      border-radius:0!important;padding:0!important;box-shadow:none!important;
-    }
-    /* Os seletores abrangem o input interno e o wrapper do BaseWeb. */
-    .stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"],
-    .stApp [data-baseweb="textarea"],.stApp [data-baseweb="select"],
-    .stApp [data-baseweb="select"]>div,.stApp input,.stApp textarea,
-    .stApp select,.stApp input:disabled,.stApp textarea:disabled {
-      background-color:#FFFFFF!important;color:var(--navy)!important;
-      -webkit-text-fill-color:var(--navy)!important;
-      border-color:#CBD5E1!important;color-scheme:light!important;
-    }
-    .stApp input,.stApp textarea,.stApp [data-baseweb="select"] span,
-    .stApp [data-baseweb="select"] div,.stApp [data-baseweb="input"] div,
-    .stApp [data-baseweb="base-input"] div {
-      color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;
-    }
-    .stApp input::placeholder,.stApp textarea::placeholder {
-      color:#718096!important;-webkit-text-fill-color:#718096!important;
-    }
-    .stApp input:focus,.stApp textarea:focus,.stApp [data-baseweb="select"]:focus-within {
-      border-color:var(--purple)!important;outline-color:var(--purple)!important;
-    }
-    [data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],
-    [data-baseweb="calendar"] {background:#FFFFFF!important;color:var(--navy)!important;color-scheme:light!important;}
-    [data-baseweb="popover"] *,[data-baseweb="menu"] *,[role="listbox"] *,
-    [data-baseweb="calendar"] * {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
-    [role="option"]:hover,[role="option"][aria-selected="true"] {background:var(--pale)!important;}
-    .stTabs [data-baseweb="tab-list"] {background:transparent!important;gap:.35rem;}
-    .stTabs [data-baseweb="tab"] {color:var(--muted)!important;border-radius:8px!important;}
-    .stTabs [aria-selected="true"] {background:var(--pale)!important;}
-    .stTabs [aria-selected="true"] * {color:#5B21B6!important;}
-    .stButton button[kind="primary"],.stFormSubmitButton button[kind="primary"] {
-      background:var(--purple)!important;color:#FFFFFF!important;border:0!important;border-radius:8px!important;
-    }
-    .stButton button[kind="primary"] *, .stFormSubmitButton button[kind="primary"] * {color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;}
-    .stButton button[kind="secondary"],.stFormSubmitButton button[kind="secondary"],
-    .stDownloadButton button {background:#FFFFFF!important;color:var(--navy)!important;
-      border:1px solid var(--line)!important;border-radius:8px!important;}
-    .stButton button[kind="secondary"] *, .stFormSubmitButton button[kind="secondary"] *,
-    .stDownloadButton button * {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
-    [data-testid="stMetric"] {background:transparent!important;
-      border:0!important;border-radius:0!important;padding:4px 0;}
-    [data-testid="stMetric"] * {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
-    [data-testid="stExpander"] summary,[data-testid="stSidebar"] {background:#FFFFFF!important;}
-    [data-testid="stExpander"] summary * {color:var(--navy)!important;}
-    .hero-banner {background:#FFFFFF!important;border:0;
-      padding:1.1rem .25rem;border-radius:12px;margin-bottom:1rem;}
-    .hero-banner h1 {color:var(--navy)!important;font-size:1.5rem!important;margin:0 0 .3rem!important;}
-    .hero-banner p {color:var(--muted)!important;margin:0!important;}
-    .status-badge {display:inline-block;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:600;}
-    .status-active {background:#EDE9FE;color:#5B21B6!important;}
-    .status-inactive {background:#E2E8F0;color:#334155!important;}
-    .step-header {display:flex;align-items:center;gap:10px;margin-bottom:.75rem;
-      padding-bottom:.5rem;border-bottom:1px solid var(--line);}
-    .step-number {background:#F1EBFF;color:#5B21B6!important;width:28px;height:28px;
-      border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;}
-    .step-title {font-size:1.05rem;font-weight:650;color:var(--navy)!important;margin:0;}
-    .event-info-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:.75rem 0;background:#F8F5FF!important;border:1px solid #EDE9FE!important;border-radius:12px;padding:1rem;}
-    .event-info-item span {display:block;font-size:.75rem;text-transform:uppercase;color:#5B21B6!important;font-weight:600;}
-    .event-info-item strong {color:var(--navy)!important;}
-    .signature-box-hint {background:#F8F5FF;border-radius:8px;padding:.65rem 1rem;color:var(--navy)!important;margin-bottom:.5rem;}
-    .signature-box-hint strong {color:var(--navy)!important;}
-    [data-testid="stAlert"] {border-radius:10px!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentError"]),
-    [data-testid="stAlert"]:has([data-testid="stAlertIconError"]) {background:#FEF2F2!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]),
-    [data-testid="stAlert"]:has([data-testid="stAlertIconWarning"]) {background:#FFFBEB!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]),
-    [data-testid="stAlert"]:has([data-testid="stAlertIconInfo"]) {background:#F5F3FF!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]),
-    [data-testid="stAlert"]:has([data-testid="stAlertIconSuccess"]) {background:#ECFDF5!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentError"]) *,
-    [data-testid="stAlert"]:has([data-testid="stAlertIconError"]) * {color:#991B1B!important;-webkit-text-fill-color:#991B1B!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]) *,
-    [data-testid="stAlert"]:has([data-testid="stAlertIconWarning"]) * {color:#92400E!important;-webkit-text-fill-color:#92400E!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) *,
-    [data-testid="stAlert"]:has([data-testid="stAlertIconInfo"]) * {color:#4C1D95!important;-webkit-text-fill-color:#4C1D95!important;}
-    [data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) *,
-    [data-testid="stAlert"]:has([data-testid="stAlertIconSuccess"]) * {color:#065F46!important;-webkit-text-fill-color:#065F46!important;}
-    .login-intro {text-align:center;margin:2rem auto 1.25rem;}
-    .login-symbol {width:58px;height:58px;border-radius:16px;background:#F3EEFF;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:#6D28D9;}
-    .login-intro h1 {font-size:1.65rem;color:var(--navy)!important;margin:.2rem 0 .4rem;}
-    .login-intro p {color:var(--muted)!important;font-size:.92rem;}
-    .login-footer {text-align:center;color:#64748B!important;font-size:.79rem;margin-top:1rem;}
-    .section-intro h1 {font-size:1.65rem;color:var(--navy)!important;margin-bottom:.2rem;}
-    .section-intro p {color:var(--muted)!important;margin-bottom:.65rem;font-size:.91rem;}
-    .section-intro h1 {font-size:1.4rem!important;margin-bottom:.12rem!important;}
-    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:.4rem 0 .85rem;}
-    .admin-kpi {background:#fff;border:1px solid #E9DFFF;border-radius:11px;padding:12px 14px;min-width:0;}
-    .admin-kpi-label {font-size:.83rem;color:#52647B!important;line-height:1.3;}
-    .admin-kpi-value {font-size:1.75rem;font-weight:700;line-height:1.2;margin-top:4px;color:#172B4D!important;}
-    .parent-intro {text-align:center;padding:5rem 0 0.8rem;}
-    .parent-intro h1 {
-    font-size: 1.35rem !important;
-    font-weight: 700;
-    line-height: 1.3;
-    margin: .5rem 0 .4rem !important;
-}
-
-.parent-intro p {
-    font-size: .88rem !important;
-    line-height: 1.45;
-    color: #52647B !important;
-    max-width: 330px;
-    margin: 0 auto !important;
-}
-
-.parent-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-}
-    .event-guidance {background:#F8F5FF;border:1px solid #EDE9FE;border-radius:9px;padding:.85rem 1rem;color:var(--navy)!important;margin:.7rem 0;}
-    .event-guidance strong {color:var(--navy)!important;}
-    .signature-area {max-width:100%;overflow-x:auto;}
-    [data-testid="stSidebar"] {border-right:1px solid #E2E8F0!important;}
-    [data-testid="stSidebar"] [data-testid="stAlert"] {border-radius:8px!important;}
-    @media(max-width:700px) {.hero-banner{padding:1.1rem!important;}.hero-banner h1{font-size:1.25rem!important;}
-      [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;}}
-    /* Layout responsivo: evitar overflow e garantir largura legível */
-    [data-testid="stMainBlockContainer"] {
-      max-width:1120px!important;
-      padding-top:1.25rem!important;
-      padding-left:clamp(.75rem,3vw,2rem)!important;
-      padding-right:clamp(.75rem,3vw,2rem)!important;
-    }
-    .stApp [data-testid="stDataFrame"],.stApp [data-testid="stTable"],
-    .stApp [data-testid="stCodeBlock"] {max-width:100%;overflow-x:auto;}
-    .stApp [data-testid="stFileUploader"],.stApp [data-testid="stDateInput"],
-    .stApp [data-testid="stSelectbox"],.stApp [data-testid="stTextInput"],
-    .stApp [data-testid="stTextArea"] {color-scheme:light!important;}
-    .stApp [data-baseweb="button"],.stApp button {min-height:42px;}
-    .stApp [data-testid="stCanvas"] {max-width:100%;}
-    .stApp [data-testid="stWidgetLabel"] {font-weight:550;}
-    @media (max-width: 700px) {
-    .parent-intro {
-        padding: .3rem 0 .7rem !important;
-    }
-
-    .parent-intro h1 {
-        font-size: 1.25rem !important;
-    }
-
-    .parent-intro p {
-        font-size: .85rem !important;
-    }
-}
-      .event-info-grid {grid-template-columns:1fr!important;gap:.65rem!important;}
-      /* Preserva colunas pequenas; Streamlit gerencia o empilhamento no celular. */
-      .stTabs [data-baseweb="tab-list"] {overflow-x:auto;flex-wrap:nowrap;}
-      .stTabs [data-baseweb="tab"] {white-space:nowrap;}
-      .login-intro {margin:.6rem auto 1rem!important;}
-      .section-intro h1 {font-size:1.2rem!important;}
-      .section-intro p {font-size:.82rem!important;margin-bottom:.45rem!important;}
-      .admin-kpi-grid {gap:7px;margin:.25rem 0 .6rem;}
-      .admin-kpi {padding:9px 7px;border-radius:9px;text-align:center;}
-      .admin-kpi-label {font-size:.69rem;line-height:1.2;}
-      .admin-kpi-value {font-size:1.4rem;margin-top:5px;}
-    }
-
-    /* Redesign minimalista: elimina contornos dos containers nativos de todas as versoes. */
+    :root {--navy:#182C4D;--muted:#617187;--purple:#6D28D9;--line:#E6EAF1}
+    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {background:#fff!important;color:var(--navy)!important}
+    [data-testid="stMainBlockContainer"] {max-width:940px!important;padding:1.3rem 1.1rem 3rem!important}
+    .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label {color:var(--navy)}
+    [data-testid="stCaptionContainer"] p {color:var(--muted)!important}
+    /* Nao criar molduras em containers Streamlit nem em suas camadas internas. */
     .stApp [data-testid="stVerticalBlockBorderWrapper"],
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div,
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-    .stApp [data-testid="stVerticalBlock"]:not([data-testid="stSidebar"] *) {
-      box-shadow:none!important;
+    .stApp [data-testid="stForm"] {
+      border:none!important;outline:none!important;box-shadow:none!important;
+      background:transparent!important;border-radius:0!important;padding:0!important;
     }
-    .stApp [data-testid="stVerticalBlockBorderWrapper"],
-    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div {
-      border:0!important;outline:0!important;background:transparent!important;
-      border-radius:0!important;padding:0!important;
+    .stApp [data-testid="stMetric"] {border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
+    .stApp [data-testid="stCodeBlock"] {border:0!important;box-shadow:none!important;background:#F7F8FC!important}
+    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],
+    .stApp [data-baseweb="select"] {background:#fff!important;border-color:#DDE3EE!important}
+    .stApp input,.stApp textarea {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important}
+    .stApp .stButton button,.stApp .stDownloadButton button,.stApp .stFormSubmitButton button {
+      border-radius:9px!important;min-height:40px!important;box-shadow:none!important;font-weight:600!important
     }
-    .stApp [data-testid="stMainBlockContainer"] {max-width:960px!important;}
-    .stApp [data-testid="stMainBlockContainer"] > div {gap:.85rem!important;}
-    .stApp [data-testid="stMetric"] {border:0!important;background:transparent!important;padding:0!important;}
-    .stApp [data-testid="stCodeBlock"] {border:0!important;background:#F8FAFC!important;border-radius:8px!important;}
-    .stApp [data-testid="stForm"] {border:0!important;background:transparent!important;padding:0!important;}
-    .stApp [data-testid="stExpander"] {border:1px solid #E8EDF5!important;border-radius:9px!important;overflow:hidden;}
-    .stApp [data-testid="stTabs"] [data-baseweb="tab-list"] {border-bottom:1px solid #E8EDF5;}
-    .stApp .stButton button,.stApp .stDownloadButton button {font-weight:600!important;box-shadow:none!important;}
-    .stApp .stTextInput input {border-radius:8px!important;min-height:40px!important;}
-    .event-count {display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;padding:.15rem 0;}
-    .event-count span {font-size:.76rem;color:#64748B!important;}
-    .event-count strong {font-size:1.65rem;color:#172B4D!important;line-height:1.1;}
-    .stApp [data-testid="stMainBlockContainer"] h3 {font-size:1.08rem!important;line-height:1.35!important;}
+    .stApp .stButton button[kind="primary"],.stApp .stFormSubmitButton button[kind="primary"] {
+      background:var(--purple)!important;color:#fff!important;border:0!important
+    }
+    .stApp .stButton button[kind="primary"] *,.stApp .stFormSubmitButton button[kind="primary"] * {color:#fff!important}
+    .stApp [data-testid="stExpander"] {border:1px solid var(--line)!important;border-radius:10px!important}
+    .section-intro h1 {font-size:1.55rem!important;margin:0 0 .2rem!important}
+    .section-intro p {color:var(--muted)!important;font-size:.9rem!important;margin:0 0 .7rem!important}
+    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:.4rem 0 1rem}
+    .admin-kpi {background:#F7F6FB;border:0;border-radius:10px;padding:12px;min-width:0}
+    .admin-kpi-label {color:var(--muted);font-size:.77rem}
+    .admin-kpi-value {font-size:1.65rem;font-weight:750;color:var(--navy)}
+    .status-badge {display:inline-block;padding:4px 9px;border-radius:99px;font-size:.74rem;font-weight:650}
+    .status-active {background:#EDE9FE;color:#5B21B6}
+    .status-inactive {background:#F1F5F9;color:#475569}
+    .step-header {display:flex;align-items:center;gap:10px;margin:.35rem 0 .8rem;padding-bottom:.55rem;border-bottom:1px solid var(--line)}
+    .step-number {display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;background:#F1EBFF;color:#5B21B6;font-weight:700}
+    .step-title {margin:0;font-size:1rem;font-weight:700}
+    .event-info-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:.6rem 0;padding:13px;background:#F8F7FC;border-radius:10px}
+    .event-info-item span {display:block;font-size:.72rem;color:#6D28D9;font-weight:650}
+    .event-info-item strong {font-size:.91rem;color:var(--navy)}
+    .event-guidance,.signature-box-hint {background:#F8F7FC;border:0;border-radius:9px;padding:.75rem;margin:.6rem 0}
+    .parent-intro {text-align:center;padding:.65rem 0 .7rem}
+    .parent-intro h1 {font-size:1.4rem!important;margin:.3rem 0}
+    .parent-intro p {font-size:.88rem;color:var(--muted)!important}
+    .parent-icon {display:none}
+    .login-intro {text-align:center;margin:1rem auto}
+    .login-intro h1 {font-size:1.5rem!important}
+    .login-symbol {display:none}
+    .login-footer {text-align:center;color:var(--muted);font-size:.8rem;margin:1rem 0}
+    .event-count {text-align:right}
+    .event-count span {display:block;color:var(--muted);font-size:.77rem}
+    .event-count strong {font-size:1.5rem;color:var(--navy)}
+    .interface-version {color:#9AA5B5;font-size:.7rem;text-align:right;margin-bottom:.4rem}
     @media(max-width:700px) {
-      .stApp [data-testid="stMainBlockContainer"] {padding:1rem .9rem 2rem!important;}
-      .stApp [data-testid="stMainBlockContainer"] > div {gap:.65rem!important;}
-      .stApp [data-testid="stHorizontalBlock"] {gap:.55rem!important;}
-      .stApp [data-testid="stColumn"] {min-width:0!important;}
-      .event-count strong {font-size:1.35rem;}
-      .stApp .stButton button {min-height:40px!important;padding:.4rem .55rem!important;font-size:.86rem!important;}
-      .admin-kpi {border:0!important;background:#F8F7FC!important;}
+      [data-testid="stMainBlockContainer"] {padding:.8rem .75rem 2rem!important}
+      .admin-kpi-grid {gap:6px}
+      .admin-kpi {padding:9px 7px}
+      .admin-kpi-label {font-size:.68rem}
+      .admin-kpi-value {font-size:1.3rem}
+      .event-info-grid {grid-template-columns:1fr;gap:8px}
+      .stApp .stButton button {font-size:.88rem!important}
     }
     </style>
     """, unsafe_allow_html=True)
@@ -710,6 +567,7 @@ def admin_page():
     if st.session_state.pop("admin_delete_notice", None):
         st.success("Autorização excluída com sucesso. Atualize a lista para conferir.")
 
+    st.markdown('<div class="interface-version">Havruta · Interface limpa v3</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-intro">
         <h1>Visão geral</h1>
@@ -993,6 +851,7 @@ def parent_page(token):
             import logging
             logging.getLogger(__name__).warning("DRAFT_ENCRYPTION_KEY ausente; recuperação de rascunho indisponível.")
 
+        st.markdown('<div class="interface-version">Havruta · Interface limpa v3</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="parent-intro">
             <div class="parent-icon">
