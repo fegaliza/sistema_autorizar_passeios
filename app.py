@@ -365,6 +365,8 @@ def issue_admin_cookie():
     expires_at = int(time.time()) + ADMIN_COOKIE_MAX_AGE
     value = f"{expires_at}.{admin_cookie_signature(expires_at)}"
     admin_cookie_controller().set(ADMIN_COOKIE_NAME, value, max_age=ADMIN_COOKIE_MAX_AGE)
+    # A escrita acontece no navegador. Nao desmontar o componente imediatamente.
+    time.sleep(1.2)
 
 
 def restore_admin_cookie():
@@ -387,6 +389,8 @@ def logout_admin():
     st.session_state.admin_ok = False
     st.session_state.pop("admin_last_activity", None)
     admin_cookie_controller().remove(ADMIN_COOKIE_NAME)
+    # Aguarda a remocao no navegador antes de reiniciar a pagina.
+    time.sleep(0.7)
 
 
 def delete_authorization(authorization_id, event_id):
@@ -404,14 +408,9 @@ def admin_logged_in():
     if not ADMIN_PASSWORD_HASH:
         return False
     if not st.session_state.get("admin_ok", False):
-        # CookieController depende de um componente frontend. A leitura inicial
-        # pode estar vazia ate o navegador concluir a hidratacao.
+        # A leitura e assincrona. Reruns forçados em sequencia desmontam o
+        # componente antes que ele consiga ler o cookie no navegador.
         if not restore_admin_cookie():
-            attempts = st.session_state.get("admin_cookie_restore_attempts", 0)
-            if attempts < 5:
-                st.session_state.admin_cookie_restore_attempts = attempts + 1
-                time.sleep(0.5)
-                st.rerun()
             return False
         st.session_state.admin_cookie_restore_attempts = 0
         st.session_state.admin_ok = True
@@ -832,11 +831,20 @@ def parent_page(token):
                 "emergency_phone": ev.emergency_phone
             }
 
-        draft_hash = init_parent_draft(event_id)
+        try:
+            draft_hash = init_parent_draft(event_id)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("Falha temporaria ao restaurar rascunho")
+            draft_hash = None
         def draft_key(name):
             return f"draft_{event_id}_{name}"
         def autosave():
-            save_parent_draft(event_id, draft_hash)
+            try:
+                save_parent_draft(event_id, draft_hash)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception("Falha temporaria ao salvar rascunho")
 
         def clear_parent_form():
             """Limpa campos, assinatura e rascunho persistido do evento atual."""
