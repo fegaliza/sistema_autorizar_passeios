@@ -948,7 +948,7 @@ def parent_page(token):
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
                 parent_name = st.text_input("Nome completo do responsável *", on_change=autosave, key=draft_key("parent_name"))
-                st.text_input("Nome do líder de célula *", placeholder="Informe o nome completo do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
+                st.text_input("Nome do líder de célula *", placeholder="Informe o nome do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
                 r1, r2 = st.columns(2)
                 parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", on_change=autosave, key=draft_key("parent_document"))
                 relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], on_change=autosave, key=draft_key("relationship"))
