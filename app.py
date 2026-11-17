@@ -2,6 +2,8 @@ import os
 import io
 import uuid
 import hashlib
+import hmac
+import base64
 import secrets
 import time
 import unicodedata
@@ -15,6 +17,7 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+from streamlit_cookies_controller import CookieController
 from sqlalchemy import (
     create_engine, Column, String, Text, Date, DateTime, LargeBinary,
     ForeignKey, Boolean, select, desc, func, text
@@ -440,13 +443,76 @@ def verify_admin_password(password):
         return False
 
 
-def admin_logged_in():
-    if not ADMIN_PASSWORD_HASH or not st.session_state.get("admin_ok", False):
+# Cookie autenticado: permite atualizar o navegador sem perder o login.
+# A assinatura HMAC impede que um visitante invente uma sessao administrativa.
+ADMIN_COOKIE_NAME = "havruta_admin_session"
+ADMIN_COOKIE_MAX_AGE = 8 * 60 * 60
+
+
+def admin_cookie_controller():
+    if "admin_cookie_controller" not in st.session_state:
+        st.session_state.admin_cookie_controller = CookieController(key="havruta_admin_cookie")
+    return st.session_state.admin_cookie_controller
+
+
+def admin_cookie_signature(expires_at):
+    return hmac.new(
+        ADMIN_PASSWORD_HASH.encode("utf-8"),
+        f"havruta-admin-v1:{expires_at}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def issue_admin_cookie():
+    expires_at = int(time.time()) + ADMIN_COOKIE_MAX_AGE
+    value = f"{expires_at}.{admin_cookie_signature(expires_at)}"
+    admin_cookie_controller().set(ADMIN_COOKIE_NAME, value, max_age=ADMIN_COOKIE_MAX_AGE)
+
+
+def restore_admin_cookie():
+    if not ADMIN_PASSWORD_HASH:
         return False
+    try:
+        value = admin_cookie_controller().get(ADMIN_COOKIE_NAME)
+        if not value:
+            return False
+        expires_text, signature = value.split(".", 1)
+        expires_at = int(expires_text)
+        if expires_at <= time.time():
+            return False
+        return hmac.compare_digest(signature, admin_cookie_signature(expires_at))
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
+def logout_admin():
+    st.session_state.admin_ok = False
+    st.session_state.pop("admin_last_activity", None)
+    admin_cookie_controller().remove(ADMIN_COOKIE_NAME)
+
+
+def delete_authorization(authorization_id, event_id):
+    with db_session() as db:
+        target = db.get(Authorization, authorization_id)
+        if target is None or target.event_id != event_id:
+            return False
+        db.delete(target)
+        db.commit()
+    st.session_state.pop(f"pdf_ready_{authorization_id}", None)
+    return True
+
+
+def admin_logged_in():
+    if not ADMIN_PASSWORD_HASH:
+        return False
+    if not st.session_state.get("admin_ok", False):
+        if not restore_admin_cookie():
+            return False
+        st.session_state.admin_ok = True
+        st.session_state.admin_last_activity = time.time()
     last_activity = st.session_state.get("admin_last_activity", 0)
     if time.time() - last_activity > SESSION_TIMEOUT_SECONDS:
-        st.session_state.admin_ok = False
-        st.session_state.pop("admin_last_activity", None)
+        logout_admin()
         st.warning("Sua sessão expirou por segurança. Entre novamente.")
         return False
     st.session_state.admin_last_activity = time.time()
@@ -579,6 +645,7 @@ def login_screen():
                     st.session_state.admin_ok = True
                     st.session_state.admin_last_activity = time.time()
                     st.session_state.login_attempts = 0
+                    issue_admin_cookie()
                     st.rerun()
                 else:
                     attempts = st.session_state.get("login_attempts", 0) + 1
@@ -604,9 +671,11 @@ def admin_page():
         st.success("✓ Login realizado")
         st.write("")
         if st.button("Sair da conta", use_container_width=True):
-            st.session_state.admin_ok = False
-            st.session_state.pop("admin_last_activity", None)
+            logout_admin()
             st.rerun()
+
+    if st.session_state.pop("admin_delete_notice", None):
+        st.success("Autorização excluída com sucesso. Atualize a lista para conferir.")
 
     st.markdown("""
     <div class="section-intro">
@@ -813,26 +882,32 @@ def admin_page():
                                         mime="application/pdf", key=f"pdf_{a.id}",
                                         use_container_width=True
                                     )
-                                # Exclusão individual com confirmação para evitar remoção acidental.
-                                with st.expander("Excluir esta autorização"):
-                                    st.caption("Esta ação exclui permanentemente o registro e a assinatura digital.")
-                                    confirmed = st.checkbox(
-                                        "Confirmo a exclusão desta autorização",
-                                        key=f"confirm_auth_{a.id}"
-                                    )
-                                    if st.button(
-                                        "Excluir autorização definitivamente",
-                                        key=f"delete_auth_{a.id}",
-                                        disabled=not confirmed,
-                                        use_container_width=True,
-                                    ):
-                                        with db_session() as delete_db:
-                                            target = delete_db.get(Authorization, a.id)
-                                            if target is not None and target.event_id == selected_id:
-                                                delete_db.delete(target)
-                                                delete_db.commit()
-                                                st.toast("Autorização excluída.")
-                                        st.rerun()
+                                # Formulario de exclusao: um unico envio com confirmacao.
+                                with st.expander("🗑️ Excluir esta autorização"):
+                                    st.warning("A exclusão é permanente e remove também a assinatura armazenada.")
+                                    with st.form(f"delete_authorization_form_{a.id}"):
+                                        confirmed = st.checkbox(
+                                            f"Confirmo que desejo excluir a autorização de {a.child_name}",
+                                            key=f"confirm_auth_{a.id}",
+                                        )
+                                        delete_submitted = st.form_submit_button(
+                                            "Excluir autorização definitivamente",
+                                            type="secondary",
+                                            use_container_width=True,
+                                        )
+                                    if delete_submitted:
+                                        if not confirmed:
+                                            st.error("Marque a caixa de confirmação antes de excluir.")
+                                        else:
+                                            try:
+                                                deleted = delete_authorization(a.id, selected_id)
+                                                if deleted:
+                                                    st.session_state["admin_delete_notice"] = "Autorização excluída com sucesso."
+                                                else:
+                                                    st.session_state["admin_delete_notice"] = "Autorização não encontrada; atualize a lista."
+                                                st.rerun()
+                                            except Exception:
+                                                st.error("Não foi possível excluir esta autorização. Verifique a conexão com o banco e tente novamente.")
                     else:
                         st.info("Nenhuma autorização recebida. As autorizações assinadas aparecerão aqui.")
 
@@ -948,7 +1023,7 @@ def parent_page(token):
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
                 parent_name = st.text_input("Nome completo do responsável *", on_change=autosave, key=draft_key("parent_name"))
-                st.text_input("Nome do líder de célula *", placeholder="Informe o nome do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
+                st.text_input("Nome do líder de célula *", placeholder="Informe o nome completo do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
                 r1, r2 = st.columns(2)
                 parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", on_change=autosave, key=draft_key("parent_document"))
                 relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], on_change=autosave, key=draft_key("relationship"))
@@ -1088,7 +1163,7 @@ def parent_page(token):
                         db.commit()
                         delete_parent_draft(draft_hash)
                         st.success("Autorização enviada com sucesso!")
-                        st.info("A equipe organizadora recebeu sua autorização.")
+                        st.info("A equipe organizadora recebeu sua autorização. Para solicitar uma cópia ou corrigir alguma informação, entre em contato diretamente com a organização.")
                 except Exception as exc:
                     st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
                     if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
