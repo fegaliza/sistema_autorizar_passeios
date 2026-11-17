@@ -44,72 +44,97 @@ st.set_page_config(
 
 
 def inject_custom_css():
-    """Estilo minimalista, sem contornos de containers; responsivo."""
+    """Camada exclusivamente visual: tipografia, hierarquia e responsividade."""
     st.markdown("""
     <style>
-    :root {--navy:#182C4D;--muted:#617187;--purple:#6D28D9;--line:#E6EAF1}
-    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"],
-    [data-testid="stMainBlockContainer"] {background:#fff!important;color:var(--navy)!important}
-    [data-testid="stMainBlockContainer"] {max-width:940px!important;padding:1.3rem 1.1rem 3rem!important}
-    .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label {color:var(--navy)}
+    :root {--ink:#1D2940;--muted:#69778D;--accent:#6347B5;--accent-soft:#F2EEFC;--line:#E9EDF3;--canvas:#FAFBFE}
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {background:var(--canvas)!important;color:var(--ink)!important}
+    [data-testid="stMainBlockContainer"] {max-width:1050px!important;padding:1.65rem 1.5rem 4rem!important}
+    .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label {color:var(--ink)}
+    .stApp h1 {letter-spacing:-.035em;font-weight:750!important}
+    .stApp h2,.stApp h3 {letter-spacing:-.025em}
     [data-testid="stCaptionContainer"] p {color:var(--muted)!important}
-    /* Nao criar molduras em containers Streamlit nem em suas camadas internas. */
+    /* Neutralizar todas as molduras automáticas, inclusive wrappers internos
+       que mudaram entre versões do Streamlit. Campos e botões são preservados. */
     .stApp [data-testid="stVerticalBlockBorderWrapper"],
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div,
     .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-    .stApp [data-testid="stForm"] {
-      border:none!important;outline:none!important;box-shadow:none!important;
-      background:transparent!important;border-radius:0!important;padding:0!important;
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+    .stApp [data-testid="stForm"],
+    .stApp [data-testid="stForm"] > div,
+    .stApp [data-testid="stMetric"] {
+       border:0!important;outline:0!important;box-shadow:none!important;
+       background:transparent!important;border-radius:0!important;
     }
-    .stApp [data-testid="stMetric"] {border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
-    .stApp [data-testid="stCodeBlock"] {border:0!important;box-shadow:none!important;background:#F7F8FC!important}
-    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],
-    .stApp [data-baseweb="select"] {background:#fff!important;border-color:#DDE3EE!important}
-    .stApp input,.stApp textarea {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important}
+    .stApp [data-testid="stVerticalBlockBorderWrapper"] {padding:0!important}
+    .stApp [data-testid="stForm"] {padding:0!important}
+    .stApp [data-testid="stMetric"] {padding:0!important}
+    .stApp [data-testid="stCodeBlock"] {border:0!important;background:#F4F6FA!important}
+    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],.stApp [data-baseweb="select"] {
+       background:#fff!important;border-color:#DCE3EE!important;border-radius:9px!important
+    }
+    .stApp input,.stApp textarea {color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important}
     .stApp .stButton button,.stApp .stDownloadButton button,.stApp .stFormSubmitButton button {
-      border-radius:9px!important;min-height:40px!important;box-shadow:none!important;font-weight:600!important
+       border-radius:9px!important;min-height:40px!important;box-shadow:none!important;
+       font-weight:600!important;border-color:#DCE3EE!important
     }
     .stApp .stButton button[kind="primary"],.stApp .stFormSubmitButton button[kind="primary"] {
-      background:var(--purple)!important;color:#fff!important;border:0!important
+       background:var(--accent)!important;color:white!important;border-color:var(--accent)!important
     }
-    .stApp .stButton button[kind="primary"] *,.stApp .stFormSubmitButton button[kind="primary"] * {color:#fff!important}
-    .stApp [data-testid="stExpander"] {border:1px solid var(--line)!important;border-radius:10px!important}
-    .section-intro h1 {font-size:1.55rem!important;margin:0 0 .2rem!important}
-    .section-intro p {color:var(--muted)!important;font-size:.9rem!important;margin:0 0 .7rem!important}
-    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:.4rem 0 1rem}
-    .admin-kpi {background:#F7F6FB;border:0;border-radius:10px;padding:12px;min-width:0}
-    .admin-kpi-label {color:var(--muted);font-size:.77rem}
-    .admin-kpi-value {font-size:1.65rem;font-weight:750;color:var(--navy)}
-    .status-badge {display:inline-block;padding:4px 9px;border-radius:99px;font-size:.74rem;font-weight:650}
-    .status-active {background:#EDE9FE;color:#5B21B6}
-    .status-inactive {background:#F1F5F9;color:#475569}
-    .step-header {display:flex;align-items:center;gap:10px;margin:.35rem 0 .8rem;padding-bottom:.55rem;border-bottom:1px solid var(--line)}
-    .step-number {display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;background:#F1EBFF;color:#5B21B6;font-weight:700}
-    .step-title {margin:0;font-size:1rem;font-weight:700}
-    .event-info-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:.6rem 0;padding:13px;background:#F8F7FC;border-radius:10px}
-    .event-info-item span {display:block;font-size:.72rem;color:#6D28D9;font-weight:650}
-    .event-info-item strong {font-size:.91rem;color:var(--navy)}
-    .event-guidance,.signature-box-hint {background:#F8F7FC;border:0;border-radius:9px;padding:.75rem;margin:.6rem 0}
-    .parent-intro {text-align:center;padding:.65rem 0 .7rem}
-    .parent-intro h1 {font-size:1.4rem!important;margin:.3rem 0}
-    .parent-intro p {font-size:.88rem;color:var(--muted)!important}
-    .parent-icon {display:none}
-    .login-intro {text-align:center;margin:1rem auto}
-    .login-intro h1 {font-size:1.5rem!important}
-    .login-symbol {display:none}
+    .stApp .stButton button[kind="primary"] *,.stApp .stFormSubmitButton button[kind="primary"] * {color:white!important}
+    .stApp [data-testid="stExpander"] {border:1px solid var(--line)!important;border-radius:10px!important;background:white!important}
+    .stApp [data-testid="stExpander"] details {border:0!important}
+    .stApp [data-testid="stTabs"] [role="tablist"] {gap:8px;border-bottom:1px solid var(--line)}
+    .stApp [data-testid="stTabs"] button[role="tab"] {font-size:.9rem!important;font-weight:600!important;padding:.7rem .85rem!important}
+    .stApp [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {color:var(--accent)!important}
+    .stApp [data-testid="stDataFrame"] {border-radius:10px;overflow:hidden}
+    .stApp hr {border-color:var(--line)!important;margin:1rem 0!important}
+    .section-intro {margin:.3rem 0 1.2rem}
+    .section-intro h1 {font-size:1.9rem!important;margin:0 0 .2rem!important}
+    .section-intro p {color:var(--muted)!important;font-size:.94rem!important;margin:0!important}
+    .admin-kpi-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:.35rem 0 1.3rem}
+    .admin-kpi {background:white;border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+    .admin-kpi-label {color:var(--muted);font-size:.79rem;font-weight:550}
+    .admin-kpi-value {font-size:1.8rem;font-weight:750;color:var(--ink);line-height:1.3;margin-top:4px}
+    .status-badge {display:inline-flex;align-items:center;padding:4px 9px;border-radius:99px;font-size:.73rem;font-weight:650;vertical-align:middle}
+    .status-active {background:#E9F8F1;color:#18794E}
+    .status-inactive {background:#F0F2F5;color:#64748B}
+    .event-heading {display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:.3rem 0 .45rem}
+    .event-heading h3 {font-size:1.1rem!important;margin:0!important;line-height:1.35}
+    .event-details {color:var(--muted);font-size:.87rem;line-height:1.8;margin:.1rem 0 .7rem}
+    .event-details strong {color:var(--ink);font-weight:600}
+    .event-count {text-align:right;padding-top:.2rem}
+    .event-count span {display:block;color:var(--muted);font-size:.74rem}
+    .event-count strong {font-size:1.6rem;color:var(--ink);line-height:1.35}
+    .step-header {display:flex;align-items:center;gap:10px;margin:1.5rem 0 .8rem;padding-bottom:.7rem;border-bottom:1px solid var(--line)}
+    .step-number {display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:27px;height:27px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:750;font-size:.84rem}
+    .step-title {margin:0!important;font-size:1.03rem!important;font-weight:700}
+    .event-info-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:.6rem 0 1rem;padding:18px 20px;background:white;border:1px solid var(--line);border-radius:12px}
+    .event-info-item span {display:block;font-size:.76rem;color:var(--muted);font-weight:600;margin-bottom:3px}
+    .event-info-item strong {font-size:.93rem;color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+    .event-guidance,.signature-box-hint {background:#F3F1FA;border:0;border-radius:9px;padding:.85rem 1rem;margin:.7rem 0;color:var(--ink)}
+    .parent-intro {text-align:left;padding:.2rem 0 .7rem}
+    .parent-intro h1 {font-size:1.8rem!important;margin:.25rem 0!important}
+    .parent-intro p {font-size:.92rem;color:var(--muted)!important;margin:0}
+    .parent-icon,.login-symbol {display:none}
+    .login-intro {text-align:center;margin:1.3rem auto 1.8rem}
+    .login-intro h1 {font-size:1.7rem!important}
     .login-footer {text-align:center;color:var(--muted);font-size:.8rem;margin:1rem 0}
-    .event-count {text-align:right}
-    .event-count span {display:block;color:var(--muted);font-size:.77rem}
-    .event-count strong {font-size:1.5rem;color:var(--navy)}
-    .interface-version {color:#9AA5B5;font-size:.7rem;text-align:right;margin-bottom:.4rem}
+    .interface-version {color:#A5AFBD;font-size:.69rem;text-align:right;margin-bottom:.2rem}
     @media(max-width:700px) {
-      [data-testid="stMainBlockContainer"] {padding:.8rem .75rem 2rem!important}
-      .admin-kpi-grid {gap:6px}
-      .admin-kpi {padding:9px 7px}
+      [data-testid="stMainBlockContainer"] {padding:1rem .9rem 3rem!important}
+      .section-intro h1,.parent-intro h1 {font-size:1.45rem!important}
+      .admin-kpi-grid {gap:7px}
+      .admin-kpi {padding:11px 9px;border-radius:9px}
       .admin-kpi-label {font-size:.68rem}
-      .admin-kpi-value {font-size:1.3rem}
-      .event-info-grid {grid-template-columns:1fr;gap:8px}
-      .stApp .stButton button {font-size:.88rem!important}
+      .admin-kpi-value {font-size:1.35rem}
+      .event-info-grid {grid-template-columns:1fr;gap:11px;padding:14px}
+      .event-heading h3 {font-size:1rem!important}
+      .event-count strong {font-size:1.35rem}
+      .stApp .stButton button {font-size:.86rem!important}
+      .stApp [data-testid="stTabs"] button[role="tab"] {font-size:.77rem!important;padding:.55rem .4rem!important}
+      .step-header {margin-top:1.15rem}
     }
     </style>
     """, unsafe_allow_html=True)
@@ -555,7 +580,7 @@ def admin_page():
         return
 
     with st.sidebar:
-        st.markdown("### 📄 Portal de Autorizações")
+        st.markdown("### Portal de Autorizações")
         st.caption("Painel administrativo")
         st.divider()
         st.success("✓ Login realizado")
@@ -567,7 +592,7 @@ def admin_page():
     if st.session_state.pop("admin_delete_notice", None):
         st.success("Autorização excluída com sucesso. Atualize a lista para conferir.")
 
-    st.markdown('<div class="interface-version">Havruta · Interface limpa v3</div>', unsafe_allow_html=True)
+    st.markdown('<div class="interface-version">Havruta · Design renovado</div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-intro">
         <h1>Visão geral</h1>
@@ -624,11 +649,11 @@ def admin_page():
                 "A exclusão continua exclusivamente manual na aba Autorizações recebidas."
             )
 
-    tab_events, tab_auth, tab_create = st.tabs(["📅 Eventos", "📄 Autorizações recebidas", "＋ Criar evento"])
+    tab_events, tab_auth, tab_create = st.tabs(["Eventos", "Autorizações", "Criar evento"])
 
     with tab_events:
         if not events:
-            st.info("Nenhum evento cadastrado. Comece na aba “＋ Criar evento”.")
+            st.info("Nenhum evento cadastrado. Comece na aba “Criar evento”.")
         for ev in events:
             st.divider()
             with st.container(border=False):
@@ -638,10 +663,9 @@ def admin_page():
                     if ev.active else
                     '<span class="status-badge status-inactive">● Inativo</span>'
                 )
-                c1.markdown(f"### {escape(ev.title)} &nbsp; {badge_html}", unsafe_allow_html=True)
-                c1.markdown(f"📍 **{escape(ev.destination)}** &nbsp;·&nbsp; 📅 **{ev.event_date.strftime('%d/%m/%Y')}**")
-                if ev.departure_time or ev.return_time:
-                    c1.caption(f"🕒 Saída: {ev.departure_time or '—'} | Retorno: {ev.return_time or '—'}")
+                c1.markdown(f'<div class="event-heading"><h3>{escape(ev.title)}</h3>{badge_html}</div>', unsafe_allow_html=True)
+                time_detail = (f'<br>Saída: {escape(ev.departure_time or "—")} &nbsp;·&nbsp; Retorno: {escape(ev.return_time or "—")}') if (ev.departure_time or ev.return_time) else ''
+                c1.markdown(f'<div class="event-details"><strong>Destino:</strong> {escape(ev.destination)} &nbsp;·&nbsp; <strong>Data:</strong> {ev.event_date.strftime("%d/%m/%Y")}{time_detail}</div>', unsafe_allow_html=True)
 
                 c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
 
@@ -655,7 +679,7 @@ def admin_page():
                 if st.session_state.get("copy_text") == url:
                     st.info("Selecione e copie o link acima. (Em alguns navegadores, use o ícone de copiar no canto do bloco.)")
 
-                with st.expander("⚙️ Editar ou excluir evento"):
+                with st.expander("Editar ou excluir evento"):
                     with st.form(f"edit_{ev.id}"):
                         ec1, ec2 = st.columns(2)
                         title = ec1.text_input("Nome do evento", value=ev.title)
@@ -753,11 +777,11 @@ def admin_page():
                         csv = pd.DataFrame(export_data).to_csv(index=False).encode("utf-8-sig")
                         with m2:
                             st.write("")
-                            st.download_button("📥 Baixar lista completa (CSV)", csv, file_name="autorizacoes.csv", mime="text/csv")
+                            st.download_button("Baixar lista (CSV)", csv, file_name="autorizacoes.csv", mime="text/csv")
 
                         st.dataframe(pd.DataFrame(export_data), use_container_width=True, hide_index=True)
                         st.divider()
-                        st.subheader("📄 Comprovantes individuais em PDF")
+                        st.subheader("Comprovantes em PDF")
                         for a in rows:
                             with st.container(border=False):
                                 col1, col2 = st.columns([3.5, 1])
@@ -775,7 +799,7 @@ def admin_page():
                                         use_container_width=True
                                     )
                                 # Formulario de exclusao: um unico envio com confirmacao.
-                                with st.expander("🗑️ Excluir esta autorização"):
+                                with st.expander("Excluir esta autorização"):
                                     st.warning("A exclusão é permanente e remove também a assinatura armazenada.")
                                     with st.form(f"delete_authorization_form_{a.id}"):
                                         confirmed = st.checkbox(
@@ -851,7 +875,7 @@ def parent_page(token):
             import logging
             logging.getLogger(__name__).warning("DRAFT_ENCRYPTION_KEY ausente; recuperação de rascunho indisponível.")
 
-        st.markdown('<div class="interface-version">Havruta · Interface limpa v3</div>', unsafe_allow_html=True)
+        st.markdown('<div class="interface-version">Havruta · Design renovado</div>', unsafe_allow_html=True)
         st.markdown("""
         <div class="parent-intro">
             <div class="parent-icon">
@@ -867,19 +891,19 @@ def parent_page(token):
             st.markdown(f"""
             <div class="event-info-grid">
                 <div class="event-info-item">
-                    <span>📍 Destino</span>
+                    <span>Destino</span>
                     <strong>{escape(event_data['destination'])}</strong>
                 </div>
                 <div class="event-info-item">
-                    <span>📅 Data</span>
+                    <span>Data</span>
                     <strong>{event_data['event_date'].strftime('%d/%m/%Y')}</strong>
                 </div>
                 <div class="event-info-item">
-                    <span>🕒 Horários</span>
+                    <span>Horários</span>
                     <strong>Saída: {escape(event_data['departure_time'] or 'A confirmar')} · Retorno: {escape(event_data['return_time'] or 'A confirmar')}</strong>
                 </div>
                 <div class="event-info-item">
-                    <span>📌 Ponto de encontro</span>
+                    <span>Ponto de encontro</span>
                     <strong>{escape(event_data['meeting_point'] or 'A confirmar')}</strong>
                 </div>
             </div>
@@ -971,7 +995,7 @@ def parent_page(token):
             st.caption(RETENTION_NOTICE)
             st.markdown(
                 '<a href="?page=privacy" target="_blank" rel="noopener noreferrer">'
-                '🔒 Saiba como seus dados são utilizados (Privacidade e LGPD)</a>',
+                'Saiba como seus dados são utilizados (Privacidade e LGPD)</a>',
                 unsafe_allow_html=True,
             )
             st.caption("O aviso abre em outra aba para você continuar preenchendo este formulário.")
@@ -979,7 +1003,7 @@ def parent_page(token):
                 st.markdown(f"[Consultar política de privacidade oficial da organização]({PRIVACY_URL})")
 
             st.write("")
-            st.markdown('<div class="signature-box-hint">✍️ <strong>Assinatura do responsável legal:</strong> desenhe sua assinatura com o dedo ou mouse no quadro branco abaixo.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="signature-box-hint"><strong>Assinatura do responsável legal:</strong> desenhe sua assinatura com o dedo ou mouse no quadro branco abaixo.</div>', unsafe_allow_html=True)
             canvas = st_canvas(
                 fill_color="rgba(255, 255, 255, 0)",
                 stroke_width=3,
@@ -1067,7 +1091,7 @@ def privacy_page():
     """Aviso público simples, sem acesso aos registros de autorizações."""
     _, content, _ = st.columns([0.2, 4, 0.2])
     with content:
-        st.markdown("# 🔒 Privacidade dos seus dados")
+        st.markdown("# Privacidade dos seus dados")
         st.write(
             "Este aviso explica como as informações fornecidas no Portal de Autorizações "
             "são utilizadas para organizar atividades da igreja envolvendo participantes menores de 18 anos."
