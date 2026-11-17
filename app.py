@@ -967,7 +967,7 @@ def parent_page(token):
                 st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
                 child_name = c1.text_input("Nome completo do participante *", on_change=autosave, key=draft_key("child_name"))
-                    child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), format="DD/MM/YYYY", on_change=autosave, key=draft_key("child_birthdate"))
+                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), format="DD/MM/YYYY", on_change=autosave, key=draft_key("child_birthdate"))
         secao_participante_1()
 
         @st.fragment
