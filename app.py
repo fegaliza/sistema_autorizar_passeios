@@ -967,8 +967,43 @@ def parent_page(token):
                 st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
                 child_name = c1.text_input("Nome completo do participante *", on_change=autosave, key=draft_key("child_name"))
-                child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), format="DD/MM/YYYY", on_change=autosave, key=draft_key("child_birthdate"))
+                                meses = [
+                    "Janeiro", "Fevereiro", "Março", "Abril",
+                    "Maio", "Junho", "Julho", "Agosto",
+                    "Setembro", "Outubro", "Novembro", "Dezembro"
+                ]
 
+                chave_data = draft_key("child_birthdate")
+                data_atual = st.session_state.get(chave_data, date(2010, 1, 1))
+
+                c2.markdown("**Data de nascimento ***")
+                dia_col, mes_col, ano_col = c2.columns([1, 1.6, 1.2])
+
+                dia = dia_col.selectbox(
+                    "Dia", range(1, 32),
+                    index=data_atual.day - 1,
+                    key=draft_key("dia")
+                )
+                mes = mes_col.selectbox(
+                    "Mês", meses,
+                    index=data_atual.month - 1,
+                    key=draft_key("mes")
+                )
+                ano = ano_col.selectbox(
+                    "Ano", range(date.today().year, 1899, -1),
+                    index=date.today().year - data_atual.year,
+                    key=draft_key("ano")
+                )
+
+                try:
+                    nova_data = date(ano, meses.index(mes) + 1, dia)
+                    if nova_data <= date.today():
+                        st.session_state[chave_data] = nova_data
+                        autosave()
+                    else:
+                        st.warning("A data não pode ser futura.")
+                except ValueError:
+                    st.warning("Selecione uma data válida.")
 
         secao_participante_1()
 
