@@ -210,8 +210,8 @@ SESSION_TIMEOUT_SECONDS = 20 * 60
 MAX_LOGIN_ATTEMPTS = 5
 LOGIN_LOCK_SECONDS = 5 * 60
 APP_BASE_URL = setting("APP_BASE_URL", "").rstrip("/")
-CONTROLLER_NAME = setting("CONTROLLER_NAME", "Comunidade / organização responsável")
-CONTROLLER_EMAIL = setting("CONTROLLER_EMAIL", "Informe o e-mail de contato")
+CONTROLLER_NAME = setting("CONTROLLER_NAME", "Organização responsável (configurar CONTROLLER_NAME)")
+CONTROLLER_EMAIL = setting("CONTROLLER_EMAIL", "")
 PRIVACY_URL = setting("PRIVACY_URL", "")
 RETENTION_NOTICE = setting(
     "RETENTION_NOTICE",
@@ -432,7 +432,7 @@ def pdf_bytes(auth):
         Spacer(1, 12),
         HRFlowable(width="100%", color=colors.lightgrey),
         Spacer(1, 10),
-        Paragraph("<b>IDENTIFICAÇÃO DO(A) ADOLESCENTE</b>", styles["Heading2"]),
+        Paragraph("<b>IDENTIFICAÇÃO DO PARTICIPANTE</b>", styles["Heading2"]),
         Paragraph(f"Nome: {escape(auth.child_name)}", styles["BodyText"]),
         Paragraph(f"Data de nascimento: {auth.child_birthdate.strftime('%d/%m/%Y')}", styles["BodyText"]),
         Spacer(1, 8),
@@ -441,7 +441,7 @@ def pdf_bytes(auth):
         Paragraph(f"Documento informado: {escape(auth.parent_document)}", styles["BodyText"]),
         Paragraph(f"Telefone: {escape(auth.parent_phone)}", styles["BodyText"]),
         Paragraph(f"E-mail: {escape(auth.parent_email or 'Não informado')}", styles["BodyText"]),
-        Paragraph(f"Vínculo com o adolescente: {escape(auth.relationship_to_child)}", styles["BodyText"]),
+        Paragraph(f"Vínculo com o participante: {escape(auth.relationship_to_child)}", styles["BodyText"]),
         Spacer(1, 8),
         Paragraph("<b>CONTATO PARA EMERGÊNCIA</b>", styles["Heading2"]),
         Paragraph(f"Nome: {escape(auth.emergency_contact)}", styles["BodyText"]),
@@ -452,7 +452,7 @@ def pdf_bytes(auth):
         Spacer(1, 12),
         Paragraph(
             f"Eu, {escape(auth.parent_name)}, na qualidade de {escape(auth.relationship_to_child)}, "
-            f"declaro ser responsável legal pelo(a) adolescente identificado(a) acima e AUTORIZO sua "
+            f"declaro ser responsável legal pelo participante menor de 18 anos identificado acima e AUTORIZO sua "
             f"participação no evento descrito neste documento. Declaro que as informações fornecidas são verdadeiras "
             f"e que estou ciente dos dados de data, destino e organização apresentados nesta autorização.",
             styles["BodyText"]
@@ -672,7 +672,7 @@ def admin_page():
                 st.subheader("Novo evento / passeio")
                 st.caption("Preencha as informações principais para gerar o link exclusivo de assinatura.")
                 col_a, col_b = st.columns(2)
-                title = col_a.text_input("Nome do evento *", placeholder="Ex.: Passeio dos adolescentes")
+                title = col_a.text_input("Nome do evento *", placeholder="Ex.: Confraternização Havruta 2026")
                 destination = col_b.text_input("Destino *", placeholder="Ex.: Parque / sítio / cidade")
                 event_date = col_a.date_input("Data do passeio", value=date.today())
                 meeting = col_b.text_input("Ponto de encontro", placeholder="Endereço ou local")
@@ -698,7 +698,7 @@ def admin_page():
                         db.commit()
                     st.success("Evento criado com sucesso!")
                     st.code(make_public_url(ev.public_token), language=None)
-                    st.info("Compartilhe este link com os responsáveis dos adolescentes inscritos neste passeio.")
+                    st.info("Compartilhe este link com os responsáveis legais pelos participantes da atividade.")
 
     with tab_auth:
         event_options = {f"{e.title} — {e.event_date.strftime('%d/%m/%Y')}": e.id for e in events}
@@ -711,7 +711,7 @@ def admin_page():
                 with db_session() as db:
                     rows = db.scalars(select(Authorization).where(Authorization.event_id == selected_id).order_by(desc(Authorization.signed_at))).all()
                     export_data = [{
-                        "Adolescente": a.child_name,
+                        "Participante": a.child_name,
                         "Nascimento": a.child_birthdate.strftime("%d/%m/%Y"),
                         "Responsável": a.parent_name,
                         "Vínculo": a.relationship_to_child,
@@ -822,7 +822,7 @@ def parent_page(token):
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
             </div>
             <h1>Autorização de Participação</h1>
-            <p>Preencha os dados abaixo para autorizar a participação do adolescente na atividade.</p>
+            <p>Este formulário é destinado aos responsáveis legais por participantes menores de 18 anos. Preencha as informações abaixo para autorizar a participação na atividade.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -868,9 +868,9 @@ def parent_page(token):
         @st.fragment
         def campos_do_responsavel():
             with st.container(border=True):
-                st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do adolescente</p></div>', unsafe_allow_html=True)
+                st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
-                child_name = c1.text_input("Nome completo do adolescente *", key=draft_key("child_name"), on_change=autosave)
+                child_name = c1.text_input("Nome completo do participante *", key=draft_key("child_name"), on_change=autosave)
                 child_birthdate = c2.date_input("Data de nascimento *", value=date(2010, 1, 1), min_value=date(1900, 1, 1), max_value=date.today(), key=draft_key("child_birthdate"), on_change=autosave)
 
             with st.container(border=True):
@@ -878,7 +878,7 @@ def parent_page(token):
                 parent_name = st.text_input("Nome completo do responsável *", key=draft_key("parent_name"), on_change=autosave)
                 r1, r2 = st.columns(2)
                 parent_document = r1.text_input("CPF ou outro documento de identificação *", help="Solicite apenas o dado que a organização realmente precisa para confirmar a identidade.", key=draft_key("parent_document"), on_change=autosave)
-                relationship = r2.selectbox("Vínculo com o adolescente *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"), on_change=autosave)
+                relationship = r2.selectbox("Qual é seu vínculo com o participante? *", ["Mãe", "Pai", "Responsável legal", "Tutor(a)", "Outro"], key=draft_key("relationship"), on_change=autosave)
                 r3, r4 = st.columns(2)
                 parent_phone = r3.text_input("Telefone/WhatsApp *", key=draft_key("parent_phone"), on_change=autosave)
                 parent_email = r4.text_input("E-mail (opcional)", key=draft_key("parent_email"), on_change=autosave)
@@ -892,7 +892,7 @@ def parent_page(token):
             with st.container(border=True):
                 st.markdown('<div class="step-header"><span class="step-number">4</span><p class="step-title">Informações importantes</p></div>', unsafe_allow_html=True)
                 health_notes = st.text_area(
-                    "Há alguma informação que a equipe precisa saber para a segurança do adolescente? (opcional)",
+                    "Existe alguma informação importante para o cuidado do participante durante a atividade? (opcional)",
                     help="Evite incluir detalhes desnecessários. Informe somente o estritamente necessário para o cuidado durante a atividade.", key=draft_key("health_notes"), on_change=autosave
                 )
 
@@ -900,27 +900,77 @@ def parent_page(token):
         campos_do_responsavel()
 
         with st.container(border=True):
-            st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Declaração, privacidade e assinatura</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Confirmação e assinatura</p></div>', unsafe_allow_html=True)
             st.markdown(
-                f"Eu, responsável legal identificado(a) acima, autorizo a participação do(a) adolescente neste evento, "
-                f"conforme os dados e orientações apresentados nesta página. Declaro que as informações fornecidas são verdadeiras."
+                "Declaro ser responsável legal pelo participante menor de 18 anos "
+                "identificado neste formulário e autorizo sua participação na atividade "
+                "descrita acima. Confirmo que as informações fornecidas são verdadeiras."
             )
+
+            st.markdown("#### 🛡️ Privacidade e proteção dos dados")
+            st.markdown(
+                "Seus dados e os do participante são solicitados para registrar esta autorização "
+                "e apoiar a organização e a segurança da atividade. Leia abaixo como essas informações são tratadas."
+            )
+            with st.expander("Entenda como seus dados são utilizados (LGPD)", expanded=False):
+                st.markdown("**Quem é responsável pelo tratamento?**")
+                st.write(CONTROLLER_NAME)
+                st.markdown("**Quais informações são coletadas?**")
+                st.write(
+                    "Identificação e data de nascimento do participante; identificação, documento e "
+                    "contato do responsável legal; contato de emergência; informações adicionais "
+                    "que você optar por fornecer; confirmações e assinatura."
+                )
+                st.markdown("**Para que são utilizadas?**")
+                st.write(
+                    "Para registrar e comprovar a autorização, organizar a atividade, "
+                    "contatar responsáveis e auxiliar em situações de emergência."
+                )
+                st.markdown("**Quem pode ter acesso?**")
+                st.write(
+                    "O acesso deve ser restrito às pessoas autorizadas que necessitem "
+                    "das informações para essas finalidades. A organização deve informar "
+                    "eventuais prestadores de serviços e compartilhamentos aplicáveis em seu aviso completo."
+                )
+                st.markdown("**Informações de saúde e de menores de idade**")
+                st.write(
+                    "Informe somente o necessário para o cuidado durante a atividade. "
+                    "Dados de saúde exigem proteção especial, e o tratamento de dados de "
+                    "crianças e adolescentes deve observar seu melhor interesse."
+                )
+                st.markdown("**Por quanto tempo são mantidas?**")
+                st.write(RETENTION_NOTICE)
+                st.caption(
+                    "O sistema não exclui automaticamente as autorizações ao final da atividade. "
+                    "O prazo efetivo deve ser definido e aplicado pela organização."
+                )
+                st.markdown("**Quais são seus direitos?**")
+                st.write(
+                    "Você pode solicitar informações sobre o tratamento, acesso e correção "
+                    "dos dados e, quando aplicável, exclusão e outros direitos previstos na LGPD."
+                )
+                if CONTROLLER_EMAIL and "@" in CONTROLLER_EMAIL:
+                    st.write(f"Canal para solicitações: {CONTROLLER_EMAIL}")
+                else:
+                    st.warning("Canal de privacidade ainda não informado pela organização.")
+                if PRIVACY_URL:
+                    st.markdown(f"[Consultar o aviso de privacidade completo]({PRIVACY_URL})")
+                else:
+                    st.caption("O aviso de privacidade completo ainda não foi disponibilizado pela organização.")
+            st.caption("Leia as informações de privacidade antes de marcar as confirmações abaixo.")
+
             @st.fragment
             def confirmacoes_do_responsavel():
-                declaration = st.checkbox("Li as informações do passeio e autorizo a participação do adolescente. *", key=draft_key("declaration"), on_change=autosave)
+                declaration = st.checkbox("Li as informações da atividade e autorizo a participação do participante identificado acima. *", key=draft_key("declaration"), on_change=autosave)
                 privacy = st.checkbox(
-                    f"Estou ciente de que meus dados e os dados do adolescente serão utilizados pela organização ({CONTROLLER_NAME}) "
-                    f"exclusivamente para administrar esta autorização, organizar a atividade e tratar situações relacionadas à segurança. "
-                    f"Sei que posso solicitar informações sobre o tratamento pelo contato {CONTROLLER_EMAIL}. *", key=draft_key("privacy"), on_change=autosave
+                    f"Li as informações de privacidade e estou ciente de que meus dados e os dados do participante serão tratados pela organização ({CONTROLLER_NAME}) "
+                    f"para registrar a autorização, organizar a atividade e apoiar situações relacionadas à segurança. "
+                    " *", key=draft_key("privacy"), on_change=autosave
                 )
 
             confirmacoes_do_responsavel()
-            st.caption(RETENTION_NOTICE)
-            if PRIVACY_URL:
-                st.markdown(f"[Leia o aviso de privacidade completo]({PRIVACY_URL})")
-
             st.write("")
-            st.markdown('<div class="signature-box-hint">✍️ <strong>Assinatura do responsável:</strong> desenhe sua assinatura com o dedo ou mouse no quadro branco abaixo.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="signature-box-hint">✍️ <strong>Assinatura do responsável legal:</strong> desenhe sua assinatura com o dedo ou mouse no quadro branco abaixo.</div>', unsafe_allow_html=True)
             canvas = st_canvas(
                 fill_color="rgba(255, 255, 255, 0)",
                 stroke_width=3,
@@ -935,7 +985,7 @@ def parent_page(token):
             st.write("")
             submit_col, clear_col = st.columns([3, 1])
             with submit_col:
-                submitted = st.button("Enviar autorização assinada", type="primary", use_container_width=True)
+                submitted = st.button("Confirmar e enviar autorização", type="primary", use_container_width=True)
             with clear_col:
                 st.button(
                     "Limpar formulário", key=f"clear_form_{event_id}",
@@ -959,7 +1009,7 @@ def parent_page(token):
             declaration = st.session_state.get(draft_key("declaration"), False)
             privacy = st.session_state.get(draft_key("privacy"), False)
             errors = []
-            if not child_name.strip(): errors.append("Informe o nome completo do adolescente.")
+            if not child_name.strip(): errors.append("Informe o nome completo do participante.")
             if not parent_name.strip(): errors.append("Informe o nome completo do responsável.")
             if not parent_document.strip(): errors.append("Informe um documento de identificação.")
             if not parent_phone.strip(): errors.append("Informe o telefone do responsável.")
@@ -996,7 +1046,7 @@ def parent_page(token):
                         )
                         if existing:
                             st.error(
-                                "Já existe uma autorização registrada para este adolescente neste passeio. "
+                                "Já recebemos uma autorização para este participante nesta atividade. "
                                 "Se você acredita que houve um erro, entre em contato com a equipe organizadora."
                             )
                         else:
@@ -1010,7 +1060,7 @@ def parent_page(token):
                     from sqlalchemy.exc import IntegrityError
                     if isinstance(exc, IntegrityError):
                         st.error(
-                            "Já existe uma autorização registrada para este adolescente neste passeio. "
+                            "Já existe uma autorização registrada para este participante nesta atividade. "
                             "A duplicidade foi bloqueada pelo banco de dados. Se precisar corrigir os dados, fale com a equipe."
                         )
                     else:
