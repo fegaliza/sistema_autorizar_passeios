@@ -16,7 +16,7 @@ from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 from sqlalchemy import (
     create_engine, Column, String, Text, Date, DateTime, LargeBinary,
-    ForeignKey, Boolean, UniqueConstraint, select, desc, func
+    ForeignKey, Boolean, select, desc, func, text
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.engine import URL
@@ -286,9 +286,6 @@ class Event(Base):
 
 class Authorization(Base):
     __tablename__ = "authorizations"
-    __table_args__ = (
-        UniqueConstraint("event_id", "child_name_key", "child_birthdate", name="uq_auth_event_child_birthdate"),
-    )
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     event_id = Column(String(36), ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
     child_name = Column(String(180), nullable=False)
@@ -323,6 +320,13 @@ def initialize_database(_engine):
     # Verifica/cria apenas tabelas ausentes, uma vez por processo.
     # Não exclui nem altera registros existentes.
     Base.metadata.create_all(_engine)
+    # Remover a restricao antiga no Neon/PostgreSQL sem apagar registros.
+    # create_all nao remove restricoes de tabelas ja existentes.
+    if _engine.dialect.name == "postgresql":
+        with _engine.begin() as connection:
+            connection.execute(text(
+                'ALTER TABLE authorizations DROP CONSTRAINT IF EXISTS uq_auth_event_child_birthdate'
+            ))
     return True
 
 initialize_database(engine)
@@ -1053,36 +1057,17 @@ def parent_page(token):
                 )
                 try:
                     with db_session() as db:
-                        existing = db.scalar(
-                            select(Authorization.id).where(
-                                Authorization.event_id == event_id,
-                                Authorization.child_name_key == child_key,
-                                Authorization.child_birthdate == child_birthdate,
-                            )
-                        )
-                        if existing:
-                            st.error(
-                                "Já recebemos uma autorização para este participante nesta atividade. "
-                                "Se você acredita que houve um erro, entre em contato com a equipe organizadora."
-                            )
-                        else:
-                            db.add(auth)
-                            db.commit()
-                            auth_id = auth.id
-                            delete_parent_draft(draft_hash)
-                            st.success("Autorização enviada com sucesso!")
-                            st.info("A equipe organizadora recebeu sua autorização. Para solicitar uma cópia ou corrigir alguma informação, entre em contato diretamente com a organização.")
+                        # Cada envio gera um registro independente, mesmo para o
+                        # mesmo participante e evento. Nenhum bloqueio de duplicidade.
+                        db.add(auth)
+                        db.commit()
+                        delete_parent_draft(draft_hash)
+                        st.success("Autorização enviada com sucesso!")
+                        st.info("A equipe organizadora recebeu sua autorização. Para solicitar uma cópia ou corrigir alguma informação, entre em contato diretamente com a organização.")
                 except Exception as exc:
-                    from sqlalchemy.exc import IntegrityError
-                    if isinstance(exc, IntegrityError):
-                        st.error(
-                            "Já existe uma autorização registrada para este participante nesta atividade. "
-                            "A duplicidade foi bloqueada pelo banco de dados. Se precisar corrigir os dados, fale com a equipe."
-                        )
-                    else:
-                        st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
-                        if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
-                            st.exception(exc)
+                    st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
+                    if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
+                        st.exception(exc)
 
 
 def privacy_page():
