@@ -11,3 +11,6 @@ toolbarMode = "minimal"
 
 [ui]
 hideTopBar = true
+
+[client]
+locale = "pt-BR"
