@@ -57,9 +57,10 @@ def inject_custom_css():
     [data-testid="stCaptionContainer"] p,.stApp h1,.stApp h2,.stApp h3,.stApp h4,
     .stApp label {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
     [data-testid="stCaptionContainer"] p {color:var(--muted)!important;-webkit-text-fill-color:var(--muted)!important;}
+    /* Evita contornos aninhados nos containers, inclusive em telas pequenas. */
     [data-testid="stVerticalBlockBorderWrapper"] {
-      background:#FFFFFF!important;border:1px solid var(--line)!important;
-      border-radius:12px!important;padding:1.05rem!important;box-shadow:none!important;
+      background:transparent!important;border:0!important;
+      border-radius:0!important;padding:0!important;box-shadow:none!important;
     }
     /* Os seletores abrangem o input interno e o wrapper do BaseWeb. */
     .stApp [data-baseweb="input"],.stApp [data-baseweb="base-input"],
@@ -99,8 +100,8 @@ def inject_custom_css():
       border:1px solid var(--line)!important;border-radius:8px!important;}
     .stButton button[kind="secondary"] *, .stFormSubmitButton button[kind="secondary"] *,
     .stDownloadButton button * {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
-    [data-testid="stMetric"] {background:#FFFFFF!important;
-      border:1px solid #ECE5FF!important;border-radius:10px!important;padding:12px;}
+    [data-testid="stMetric"] {background:transparent!important;
+      border:0!important;border-radius:0!important;padding:4px 0;}
     [data-testid="stMetric"] * {color:var(--navy)!important;-webkit-text-fill-color:var(--navy)!important;}
     [data-testid="stExpander"] summary,[data-testid="stSidebar"] {background:#FFFFFF!important;}
     [data-testid="stExpander"] summary * {color:var(--navy)!important;}
@@ -177,7 +178,7 @@ def inject_custom_css():
     [data-testid="stSidebar"] {border-right:1px solid #E2E8F0!important;}
     [data-testid="stSidebar"] [data-testid="stAlert"] {border-radius:8px!important;}
     @media(max-width:700px) {.hero-banner{padding:1.1rem!important;}.hero-banner h1{font-size:1.25rem!important;}
-      [data-testid="stVerticalBlockBorderWrapper"]{padding:.75rem!important;}}
+      [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;}}
     /* Layout responsivo: evitar overflow e garantir largura legível */
     [data-testid="stMainBlockContainer"] {
       max-width:1120px!important;
@@ -624,7 +625,7 @@ def login_screen():
         </div>
         """, unsafe_allow_html=True)
 
-        with st.container(border=True):
+        with st.container(border=False):
             if not ADMIN_PASSWORD_HASH:
                 st.error("A senha administrativa não foi configurada. Gere um hash e defina ADMIN_PASSWORD_HASH nas variáveis secretas da hospedagem.")
                 return
@@ -739,7 +740,7 @@ def admin_page():
         if not events:
             st.info("Nenhum evento cadastrado. Comece na aba “＋ Criar evento”.")
         for ev in events:
-            with st.container(border=True):
+            with st.container(border=False):
                 c1, c2 = st.columns([3.2, 1])
                 badge_html = (
                     '<span class="status-badge status-active">● Link Ativo</span>'
@@ -802,7 +803,7 @@ def admin_page():
                         st.rerun()
 
     with tab_create:
-        with st.container(border=True):
+        with st.container(border=False):
             with st.form("create_event", clear_on_submit=True):
                 st.subheader("Novo evento / passeio")
                 st.caption("Preencha as informações principais para gerar o link exclusivo de assinatura.")
@@ -840,7 +841,7 @@ def admin_page():
         if not event_options:
             st.info("Crie um evento para começar a receber autorizações.")
         else:
-            with st.container(border=True):
+            with st.container(border=False):
                 selected_label = st.selectbox("Selecione o evento para visualizar", list(event_options.keys()))
                 selected_id = event_options[selected_label]
                 with db_session() as db:
@@ -867,7 +868,7 @@ def admin_page():
                         st.divider()
                         st.subheader("📄 Comprovantes individuais em PDF")
                         for a in rows:
-                            with st.container(border=True):
+                            with st.container(border=False):
                                 col1, col2 = st.columns([3.5, 1])
                                 col1.markdown(f"**{escape(a.child_name)}** <br><span style='color:#64748B;font-size:0.88rem;'>Responsável: {escape(a.parent_name)} ({escape(a.relationship_to_child)}) · Assinado em {signed_at_brasilia(a.signed_at, with_seconds=False)}</span>", unsafe_allow_html=True)
                                 # O PDF é preparado apenas sob demanda, evitando gerar
@@ -969,7 +970,7 @@ def parent_page(token):
         </div>
         """, unsafe_allow_html=True)
 
-        with st.container(border=True):
+        with st.container(border=False):
             st.markdown(f"### {escape(event_data['title'])}")
             st.markdown(f"""
             <div class="event-info-grid">
@@ -1009,7 +1010,7 @@ def parent_page(token):
         # Fragmentos isolam as atualizacoes de cada secao; sem botao intermediario.
         @st.fragment
         def secao_participante_1():
-            with st.container(border=True):
+            with st.container(border=False):
                 st.markdown('<div class="step-header"><span class="step-number">1</span><p class="step-title">Dados do participante</p></div>', unsafe_allow_html=True)
                 c1, c2 = st.columns([2, 1])
                 child_name = c1.text_input("Nome completo do participante *", on_change=autosave, key=draft_key("child_name"))
@@ -1020,7 +1021,7 @@ def parent_page(token):
 
         @st.fragment
         def secao_participante_2():
-            with st.container(border=True):
+            with st.container(border=False):
                 st.markdown('<div class="step-header"><span class="step-number">2</span><p class="step-title">Dados do responsável legal</p></div>', unsafe_allow_html=True)
                 parent_name = st.text_input("Nome completo do responsável *", on_change=autosave, key=draft_key("parent_name"))
                 st.text_input("Nome do líder de célula *", placeholder="Informe o nome completo do líder de célula", on_change=autosave, key=draft_key("cell_leader_name"))
@@ -1036,7 +1037,7 @@ def parent_page(token):
 
         @st.fragment
         def secao_participante_3():
-            with st.container(border=True):
+            with st.container(border=False):
                 st.markdown('<div class="step-header"><span class="step-number">3</span><p class="step-title">Contato para emergência</p></div>', unsafe_allow_html=True)
                 e1, e2 = st.columns(2)
                 emergency_contact = e1.text_input("Nome do contato de emergência *", on_change=autosave, key=draft_key("emergency_contact"))
@@ -1047,7 +1048,7 @@ def parent_page(token):
 
         @st.fragment
         def secao_participante_4():
-            with st.container(border=True):
+            with st.container(border=False):
                 st.markdown('<div class="step-header"><span class="step-number">4</span><p class="step-title">Informações importantes</p></div>', unsafe_allow_html=True)
                 health_notes = st.text_area(
                     "Existe alguma informação importante para o cuidado do participante durante a atividade? (opcional)",
@@ -1057,7 +1058,7 @@ def parent_page(token):
 
         secao_participante_4()
 
-        with st.container(border=True):
+        with st.container(border=False):
             st.markdown('<div class="step-header"><span class="step-number">5</span><p class="step-title">Confirmação e assinatura</p></div>', unsafe_allow_html=True)
             st.markdown(
                 "Declaro ser responsável legal pelo participante menor de 18 anos "
@@ -1179,7 +1180,7 @@ def privacy_page():
             "Este aviso explica como as informações fornecidas no Portal de Autorizações "
             "são utilizadas para organizar atividades da igreja envolvendo participantes menores de 18 anos."
         )
-        with st.container(border=True):
+        with st.container(border=False):
             st.markdown("#### Para que pedimos esses dados?")
             st.write(
                 "Para identificar o participante e seu responsável legal, registrar a autorização, "
