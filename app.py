@@ -1063,7 +1063,7 @@ def parent_page(token):
                         db.commit()
                         delete_parent_draft(draft_hash)
                         st.success("Autorização enviada com sucesso!")
-                        st.info("A equipe organizadora recebeu sua autorização. Para solicitar uma cópia ou corrigir alguma informação, entre em contato diretamente com a organização.")
+                        st.info("A equipe organizadora recebeu sua autorização.")
                 except Exception as exc:
                     st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
                     if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
