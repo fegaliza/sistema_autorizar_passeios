@@ -659,93 +659,53 @@ def admin_page():
                 c1.markdown(f'<div class="event-details"><strong>Destino:</strong> {escape(ev.destination)} &nbsp;·&nbsp; <strong>Data:</strong> {ev.event_date.strftime("%d/%m/%Y")}{time_detail}</div>', unsafe_allow_html=True)
 
                 c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
-
                 url = make_public_url(ev.public_token)
 
-st.caption("🔗 Link para compartilhar com os responsáveis:")
+                st.caption("🔗 Link para compartilhar com os responsáveis:")
 
-components.html(
-    f"""
-    <div style="font-family:Arial,sans-serif;">
-        <div style="
-            display:flex;
-            align-items:center;
-            gap:8px;
-            padding:8px;
-            border:1px solid #E7E9F0;
-            border-radius:9px;
-            background:#FFFFFF;
-        ">
-            <input
-                id="link"
-                type="text"
-                value="{escape(url, {'"': '&quot;'})}"
-                readonly
-                style="
-                    flex:1;
-                    min-width:0;
-                    border:none;
-                    outline:none;
-                    background:transparent;
-                    color:#20253B;
-                    font-size:13px;
-                "
-            >
+                components.html(
+                    f"""
+                    <input id="link" value="{escape(url, {'"': '&quot;'})}" readonly
+                        style="width:65%;padding:10px;border:1px solid #ddd;border-radius:6px;">
 
-            <button
-                id="copiar"
-                onclick="copiarLink()"
-                style="
-                    background:#6343B6;
-                    color:white;
-                    border:none;
-                    border-radius:7px;
-                    padding:10px 14px;
-                    cursor:pointer;
-                    font-weight:600;
-                    white-space:nowrap;
-                "
-            >
-                Copiar link
-            </button>
-        </div>
+                    <button id="btn" onclick="copiar()"
+                        style="background:#6343B6;color:white;padding:10px;
+                        border:0;border-radius:6px;cursor:pointer;">
+                        Copiar link
+                    </button>
 
-        <div id="mensagem" role="status" aria-live="polite"
-             style="font-size:12px;margin-top:7px;"></div>
-    </div>
+                    <p id="mensagem" role="status" aria-live="polite"
+                       style="font-size:13px;margin-top:6px;"></p>
 
-    <script>
-    async function copiarLink() {{
-        const input = document.getElementById("link");
-        const mensagem = document.getElementById("mensagem");
-        const botao = document.getElementById("copiar");
+                    <script>
+                    async function copiar() {{
+                        const link = document.getElementById("link");
+                        const mensagem = document.getElementById("mensagem");
 
-        try {{
-            if (navigator.clipboard && window.isSecureContext) {{
-                await navigator.clipboard.writeText(input.value);
-            }} else {{
-                input.focus();
-                input.select();
-                const copiou = document.execCommand("copy");
-                if (!copiou) throw new Error("Falha ao copiar");
-            }}
-
-            mensagem.textContent = "✓ Link copiado com sucesso!";
-            mensagem.style.color = "#16804A";
-            botao.textContent = "✓ Copiado!";
-        }} catch (erro) {{
-            mensagem.textContent =
-                "Não foi possível copiar automaticamente. Selecione o link e copie manualmente.";
-            mensagem.style.color = "#B45309";
-            input.focus();
-            input.select();
-        }}
-    }}
-    </script>
-    """,
-    height=94,
-    scrolling=False,
-)
+                        try {{
+                            if (navigator.clipboard && window.isSecureContext) {{
+                                await navigator.clipboard.writeText(link.value);
+                            }} else {{
+                                link.select();
+                                if (!document.execCommand("copy")) {{
+                                    throw new Error("Falha na cópia");
+                                }}
+                            }}
+                            mensagem.innerText = "✓ Link copiado com sucesso!";
+                            mensagem.style.color = "green";
+                            document.getElementById("btn").innerText = "✓ Copiado!";
+                        }} catch (erro) {{
+                            mensagem.innerText = "Não foi possível copiar. Selecione o link manualmente.";
+                            mensagem.style.color = "red";
+                            link.focus();
+                            link.select();
+                        }}
+                    }}
+                    </script>
+                    """,
+                    height=100,
+                )
+               
 
                 with st.expander("Editar ou excluir evento"):
                     with st.form(f"edit_{ev.id}"):
