@@ -8,9 +8,8 @@ textColor = "#172B4D"
 [client]
 showErrorDetails = "none"
 toolbarMode = "minimal"
-
+locale = "pt-BR"
 [ui]
 hideTopBar = true
 
-[client]
-locale = "pt-BR"
+
