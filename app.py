@@ -40,8 +40,9 @@ st.set_page_config(
 
 
 def inject_custom_css():
-    
- <style>
+    """Tema claro fixo: superfícies brancas e texto azul-escuro em todos os campos."""
+    st.markdown("""
+    <style>
     :root { color-scheme:light; --navy:#172B4D; --muted:#52647B; --line:#DCE3EE; --purple:#6D28D9; --pale:#F6F2FF; }
     html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stHeader"],
     [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
