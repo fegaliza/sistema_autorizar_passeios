@@ -661,7 +661,7 @@ def admin_page():
                 c2.markdown(f'<div class="event-count"><span>Assinaturas</span><strong>{event_auth_counts.get(ev.id, 0)}</strong></div>', unsafe_allow_html=True)
 
                 url = make_public_url(ev.public_token)
-                st.markdown('<div class="copy-hint">Link para compartilhar · toque no ícone de copiar à direita</div>', unsafe_allow_html=True)
+                st.caption("🔗 Link para compartilhar com os responsáveis:")
                 st.code(url, language=None)
 
                 with st.expander("Editar ou excluir evento"):
