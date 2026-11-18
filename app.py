@@ -31,6 +31,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, HRFlowable
 from reportlab.lib.units import cm
 from xml.sax.saxutils import escape
+from pypdf import PdfReader, PdfWriter
 
 # ---------------------------------------------------------------------
 # CONFIGURAÇÃO & DESIGN SYSTEM (UX/UI ROXO & BRANCO)
@@ -513,6 +514,56 @@ def pdf_bytes(auth):
     return buffer.getvalue()
 
 
+
+def pdf_completo_evento(autorizacoes, titulo_evento):
+    """Reune os comprovantes originais em um PDF para consulta offline."""
+    writer = PdfWriter()
+
+    # Capa simples com orientacoes para o portador do documento.
+    capa_buffer = io.BytesIO()
+    capa = SimpleDocTemplate(
+        capa_buffer, pagesize=A4, rightMargin=2.2*cm, leftMargin=2.2*cm,
+        topMargin=2*cm, bottomMargin=2*cm
+    )
+    estilos = getSampleStyleSheet()
+    conteudo = [
+        Paragraph("AUTORIZACOES DO PASSEIO", estilos["Title"]),
+        Spacer(1, 14),
+        Paragraph(f"<b>Evento:</b> {escape(titulo_evento)}", estilos["BodyText"]),
+        Paragraph(f"<b>Autorizações incluídas:</b> {len(autorizacoes)}", estilos["BodyText"]),
+        Paragraph(
+            f"<b>Gerado em:</b> {datetime.now(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y às %H:%M')} (Brasília)",
+            estilos["BodyText"]
+        ),
+        Spacer(1, 20),
+        Paragraph("ORIENTACOES DE CONFIDENCIALIDADE", estilos["Heading2"]),
+        Paragraph(
+            "Este documento contem dados pessoais de criancas e adolescentes, de seus responsaveis "
+            "e possivelmente informacoes de saude. Seu uso deve ficar restrito a pessoas autorizadas "
+            "pela organizacao e as necessidades da atividade.", estilos["BodyText"]
+        ),
+        Spacer(1, 10),
+        Paragraph("1. Nao compartilhe o arquivo com pessoas nao autorizadas ou em grupos de mensagens.", estilos["BodyText"]),
+        Paragraph("2. Mantenha o documento em um aparelho protegido por senha ou biometria.", estilos["BodyText"]),
+        Paragraph("3. Baixe e salve o PDF no dispositivo enquanto houver internet; teste sua abertura offline.", estilos["BodyText"]),
+        Paragraph("4. Exclua as copias locais quando nao forem mais necessarias, inclusive da lixeira e de backups, quando aplicavel.", estilos["BodyText"]),
+        Paragraph("5. Em caso de perda do aparelho ou compartilhamento indevido, avise imediatamente a organizacao.", estilos["BodyText"]),
+        Spacer(1, 18),
+        Paragraph("As autorizacoes individuais estao nas paginas seguintes, em ordem alfabetica.", estilos["BodyText"]),
+    ]
+    capa.build(conteudo)
+    capa_buffer.seek(0)
+    writer.append(PdfReader(capa_buffer))
+
+    for autorizacao in sorted(autorizacoes, key=lambda a: (normalize_child_name(a.child_name), a.id)):
+        # Reutiliza integralmente o comprovante individual, incluindo assinatura.
+        writer.append(PdfReader(io.BytesIO(pdf_bytes(autorizacao))))
+
+    resultado = io.BytesIO()
+    writer.write(resultado)
+    return resultado.getvalue()
+
+
 # ---------------------------------------------------------------------
 # TELAS (UX/UI REDESIGN)
 # ---------------------------------------------------------------------
@@ -808,6 +859,45 @@ def admin_page():
                             st.download_button("Baixar lista (CSV)", csv, file_name="autorizacoes.csv", mime="text/csv")
 
                         st.dataframe(pd.DataFrame(export_data), use_container_width=True, hide_index=True)
+
+                        # Download opcional: nao altera os comprovantes individuais.
+                        with st.expander("Consulta offline · PDF completo do passeio"):
+                            st.caption(
+                                "Baixe enquanto estiver conectado à internet e salve o arquivo no celular "
+                                "antes do passeio. Confira se ele abre em modo avião."
+                            )
+                            st.caption(
+                                "Privacidade (LGPD): contém dados de menores e responsáveis. "
+                                "Não compartilhe com pessoas não autorizadas; proteja o aparelho e "
+                                "exclua as cópias quando não forem mais necessárias."
+                            )
+                            confirmado = st.checkbox(
+                                "Estou ciente dos cuidados de confidencialidade e uso restrito.",
+                                key=f"offline_confirm_{selected_id}"
+                            )
+                            chave_pdf = f"offline_pdf_{selected_id}"
+                            assinatura_atual = tuple(sorted((a.id, a.signed_at.isoformat()) for a in rows))
+                            if st.session_state.get(f"{chave_pdf}_versao") != assinatura_atual:
+                                st.session_state.pop(chave_pdf, None)
+                            if st.button(
+                                "Preparar PDF completo", key=f"offline_prepare_{selected_id}",
+                                disabled=not confirmado, type="secondary"
+                            ):
+                                try:
+                                    with st.spinner("Reunindo as autorizações..."):
+                                        st.session_state[chave_pdf] = pdf_completo_evento(
+                                            rows, selected_label
+                                        )
+                                        st.session_state[f"{chave_pdf}_versao"] = assinatura_atual
+                                except Exception:
+                                    st.error("Não foi possível preparar o PDF. Tente novamente.")
+                            if confirmado and chave_pdf in st.session_state:
+                                st.download_button(
+                                    "Baixar PDF completo do passeio",
+                                    data=st.session_state[chave_pdf],
+                                    file_name=f"autorizacoes_passeio_{selected_id}.pdf",
+                                    mime="application/pdf", key=f"offline_download_{selected_id}"
+                                )
                         st.divider()
                         st.subheader("Comprovantes em PDF")
                         for a in rows:
