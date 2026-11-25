@@ -1197,10 +1197,11 @@ def parent_page(token):
                     privacy_accepted=True, declaration_accepted=True, signature_png=sig_io.getvalue(),
                     signed_at=datetime.utcnow()
                 )
-                                try:
+                    try:
                     with db_session() as db:
 
-                        # Evita envios simultâneos no PostgreSQL.
+                    
+                    # Evita envios simultâneos no PostgreSQL.
                         if engine.dialect.name == "postgresql":
                             db.execute(
                                 select(Event.id)
