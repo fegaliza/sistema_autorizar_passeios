@@ -1197,15 +1197,41 @@ def parent_page(token):
                     privacy_accepted=True, declaration_accepted=True, signature_png=sig_io.getvalue(),
                     signed_at=datetime.utcnow()
                 )
-                try:
+                                try:
                     with db_session() as db:
-                        # Cada envio gera um registro independente, mesmo para o
-                        # mesmo participante e evento. Nenhum bloqueio de duplicidade.
+
+                        # Evita envios simultâneos no PostgreSQL.
+                        if engine.dialect.name == "postgresql":
+                            db.execute(
+                                select(Event.id)
+                                .where(Event.id == event_id)
+                                .with_for_update()
+                            ).scalar_one()
+
+                        # Verifica se o participante já possui autorização.
+                        existing_auth = db.scalar(
+                            select(Authorization.id).where(
+                                Authorization.event_id == event_id,
+                                Authorization.child_name_key == child_key,
+                                Authorization.child_birthdate == child_birthdate
+                            ).limit(1)
+                        )
+
+                        if existing_auth is not None:
+                            st.warning(
+                                "Inscrição do participante já realizada! "
+                                "Não é necessário enviar novamente. "
+                                "Caso precise corrigir alguma informação, "
+                                "entre em contato com a equipe organizadora."
+                            )
+                            return
+
                         db.add(auth)
                         db.commit()
                         delete_parent_draft(draft_hash)
                         st.success("Autorização enviada com sucesso!")
                         st.info("A equipe organizadora recebeu sua autorização.")
+                
                 except Exception as exc:
                     st.error("Não foi possível salvar a autorização. Tente novamente mais tarde ou contate a equipe.")
                     if setting("SHOW_DEBUG_ERRORS", "false").lower() == "true":
