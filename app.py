@@ -1186,14 +1186,14 @@ def parent_page(token):
                 image = Image.fromarray(canvas.image_data.astype("uint8")).convert("RGBA")
                 sig_io = io.BytesIO()
                 image.save(sig_io, format="PNG")
-                                child_key = normalize_child_name(child_name)
+                child_key = normalize_child_name(child_name)
                 auth = Authorization(
                     event_id=event_id,
                     child_name=child_name.strip(),
                     child_name_key=child_key,
                     child_birthdate=child_birthdate,
                     parent_name=parent_name.strip(),
-             p       cell_leader_name=cell_leader_name.strip(),
+                    cell_leader_name=cell_leader_name.strip(),
                     parent_document=parent_document.strip(),
                     parent_phone=parent_phone.strip(),
                     parent_email=parent_email.strip(),
